@@ -5,6 +5,7 @@ NUM_PLAYERS = 3
 HAND_SIZE = 5
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 MAX_CLUES = 8
+NUMBER_OF_GAMES = 2
 
 
 class Game:
@@ -18,6 +19,15 @@ class Game:
         self.deck = []
         self.graveyard = []
         self.table = {color: [] for color in COLORS}
+
+        for color in COLORS:
+            for i in xrange(0, 3):
+                self.deck.append(Card(color, 1))
+            for i in xrange(2, 5):
+                self.deck.append(Card(color, i))
+                self.deck.append(Card(color, i))
+            self.deck.append(Card(color, 5))
+        shuffle(self.deck)
 
 
 class Card(object):
@@ -35,6 +45,9 @@ class Player:
     def __init__(self):
         self.hand = [None] * HAND_SIZE
         self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
+
+    def do_something(self):
+        pass
 
     def lose_card(self, index):
         lost = self.hand[index]
@@ -63,6 +76,9 @@ class Player:
         game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
         game.graveyard.append(discarded)
 
+    def give_clue(self, clue, receiving_player):
+        receiving_player.receive_clue(clue)
+
     def receive_clue(self, clue):
         game.remaining_clues -= 1
         clue_type = 'number' if type(clue) == int else 'color'
@@ -71,41 +87,35 @@ class Player:
                 print "%d matches" % index
                 self.knowledge[index][clue_type] = clue
 
+for i in xrange(0, NUMBER_OF_GAMES):
+    # Start a game
+    game = Game()
 
-# Build deck
-game = Game()
-for color in COLORS:
-    for i in xrange(0, 3):
-        game.deck.append(Card(color, 1))
-    for i in xrange(2, 5):
-        game.deck.append(Card(color, i))
-        game.deck.append(Card(color, i))
-    game.deck.append(Card(color, 5))
-shuffle(game.deck)
+    # Deal initial hands
+    players = [Player() for i in xrange(0, NUM_PLAYERS)]
+    for player in players:
+        for i in xrange(0, HAND_SIZE):
+            player.hand[i] = game.deck.pop()
+        print player.hand
 
-# Deal initial hands
-players = [Player() for i in xrange(0, NUM_PLAYERS)]
-for player in players:
-    for i in xrange(0, HAND_SIZE):
-        player.hand[i] = game.deck.pop()
-    print player.hand
-
-# Main loop
-while not game.game_over:
-    current_player = players[game.whose_turn]
-    if game.remaining_clues > 0:
-        players[0].receive_clue('pink')
-        print players[0].knowledge
-    else:
-        current_player.play_card(0)
-    pprint(game.table)
-
-    #if game isn't over, prepare for next turn
-    if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
-        if len(game.deck) > 0:
-            game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
+    # Main loop
+    while not game.game_over:
+        current_player = players[game.whose_turn]
+        if game.remaining_clues > 0:
+            current_player.give_clue('pink', players[0])
+            print players[0].knowledge
         else:
-            game.last_turn += 1
+            current_player.play_card(0)
+        pprint(game.table)
+
+        #if game isn't over, prepare for next turn
+        if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
-    else:
-        game.game_over = True
+            if len(game.deck) <= 0:
+                game.last_turn += 1
+        else:
+            game.game_over = True
+
+    color_scores = [len(color) for color in game.table.values()]
+    final_score = sum(color_scores)
+    print "FINAL SCORE: %d" % final_score
