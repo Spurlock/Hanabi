@@ -8,12 +8,12 @@ MAX_CLUES = 8
 
 
 class Game:
-
     def __init__(self):
         self.game_over = False
         self.remaining_fuses = 3
         self.remaining_clues = 8
         self.whose_turn = 0
+        self.last_turn = -1
         self.deck = []
         self.graveyard = []
         self.table = {color: [] for color in COLORS}
@@ -100,7 +100,11 @@ while not game.game_over:
     pprint(game.table)
 
     #if game isn't over, prepare for next turn
-    if len(game.deck) > 0 and game.remaining_fuses > 0:
-        game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
+    if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
+        if len(game.deck) > 0:
+            game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
+        else:
+            game.last_turn += 1
+            game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
     else:
         game.game_over = True
