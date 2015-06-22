@@ -1,11 +1,12 @@
+from __future__ import division
 from pprint import pprint
-from random import shuffle
+import random
 
 NUM_PLAYERS = 3
 HAND_SIZE = 5
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 MAX_CLUES = 8
-NUMBER_OF_GAMES = 2
+NUMBER_OF_GAMES = 50
 
 
 class Game:
@@ -27,7 +28,7 @@ class Game:
                 self.deck.append(Card(color, i))
                 self.deck.append(Card(color, i))
             self.deck.append(Card(color, 5))
-        shuffle(self.deck)
+        random.shuffle(self.deck)
 
 
 class Card(object):
@@ -87,6 +88,10 @@ class Player:
                 print "%d matches" % index
                 self.knowledge[index][clue_type] = clue
 
+# Prepare to start playing games
+random.seed(0)
+total_score = 0
+
 for i in xrange(0, NUMBER_OF_GAMES):
     # Start a game
     game = Game()
@@ -119,3 +124,9 @@ for i in xrange(0, NUMBER_OF_GAMES):
     color_scores = [len(color) for color in game.table.values()]
     final_score = sum(color_scores)
     print "FINAL SCORE: %d" % final_score
+
+    total_score += final_score
+
+average_score = total_score / NUMBER_OF_GAMES
+print "*****"
+print "Average Score: %f" % average_score
