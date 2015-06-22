@@ -8,6 +8,7 @@ MAX_CLUES = 8
 
 
 class Game:
+    
     def __init__(self):
         self.game_over = False
         self.remaining_fuses = 3
