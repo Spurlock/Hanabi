@@ -48,9 +48,7 @@ class Player:
         self.hand = [None] * HAND_SIZE
         self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
 
-    def do_something(self):
-    # Main loop
-        while not game.game_over:
+    def take_turn(self):
             current_player = players[game.whose_turn]
             print "Player %s's turn" % game.whose_turn
             if game.remaining_clues > 0:
@@ -64,14 +62,6 @@ class Player:
                         card_up = 0
                 current_player.play_card(card_up)
             pprint(game.table)
-
-            #if game isn't over, prepare for next turn
-            if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
-                game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
-                if len(game.deck) <= 0:
-                    game.last_turn += 1
-            else:
-                game.game_over = True
 
     def lose_card(self, index):
         lost = self.hand[index]
@@ -130,8 +120,17 @@ for i in xrange(0, NUMBER_OF_GAMES):
             player.hand[i] = game.deck.pop()
         print player.hand
 
-    # Start game
-    player.do_something()
+    # Take turns loop
+    while not game.game_over:
+        player.take_turn()
+    
+        #if game isn't over, prepare for next turn
+        if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
+            game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
+            if len(game.deck) <= 0:
+                game.last_turn += 1
+        else:
+            game.game_over = True
 
     color_scores = [len(color) for color in game.table.values()]
     final_score = sum(color_scores)
