@@ -39,6 +39,12 @@ class Game:
                 player.hand[i] = self.deck.pop()
             print player.hand
 
+    # def get_playable_cards(self):
+    #     playable_cards = []
+    #     dict_of_table_items = enumerate(self.table)
+    #     for color, card_list in enumerate(self.table):
+    #         # Which card is playable for this color?
+    #         playable_cards.append()
 
 class Card(object):
 
@@ -54,7 +60,8 @@ class Player:
 
     def __init__(self, number):
         self.hand = [None] * HAND_SIZE
-        self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
+        #self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
+        self.knowledge = [Card(None, None) for i in xrange(0, HAND_SIZE)]
         self.number = number
 
     def take_turn(self):
@@ -65,14 +72,14 @@ class Player:
         else:
             card_up = 0
             for num, card in enumerate(self.knowledge):
-                if card['number'] == 1:
+                if card.number == 1:
                     card_up = num
             self.play_card(card_up)
 
     def lose_card(self, index):
         lost = self.hand[index]
         self.hand[index] = game.deck.pop() if len(game.deck) > 0 else None
-        self.knowledge[index] = {'color': None, 'number': None}
+        self.knowledge[index] = Card(None, None)
         return lost
 
     def play_card(self, index):
@@ -113,7 +120,7 @@ class Player:
         for index, card in enumerate(self.hand):
             if getattr(card, clue_type) == clue:
                 print "Card %d matches" % index
-                self.knowledge[index][clue_type] = clue
+                setattr(self.knowledge[index], clue_type, clue)
 
 # Prepare to start playing games
 random.seed(0)
