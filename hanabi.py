@@ -7,6 +7,7 @@ HAND_SIZE = 5
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
+#Current 50 Game Average Score: 3.640000
 
 
 class Game:
@@ -15,6 +16,7 @@ class Game:
         self.game_over = False
         self.remaining_fuses = 3
         self.remaining_clues = 8
+        self.seats = 0
         self.whose_turn = 0
         self.last_turn = -1
         self.deck = []
@@ -46,9 +48,24 @@ class Player:
     def __init__(self):
         self.hand = [None] * HAND_SIZE
         self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
+        self.number = game.seats
+        game.seats += 1
 
-    def do_something(self):
-        pass
+    def take_turn(self):
+            current_player = players[game.whose_turn]
+            next_player = players[(game.whose_turn + 1) % NUM_PLAYERS]
+            print "player %d's turn" % current_player.number
+            if game.remaining_clues > 0:
+                current_player.give_clue(1, next_player)
+            else:
+                for index, card in enumerate(current_player.knowledge):
+                    if card['number'] == 1:
+                        card_up = index
+                        break
+                    else:
+                        card_up = 0
+                current_player.play_card(card_up)
+            pprint(game.table)
 
     def lose_card(self, index):
         lost = self.hand[index]
@@ -78,14 +95,19 @@ class Player:
         game.graveyard.append(discarded)
 
     def give_clue(self, clue, receiving_player):
+        if receiving_player == players[game.whose_turn]:
+            print "Can't give yourself a clue"
+            exit()
+        print "Giving Player %d a clue about %ss" % (receiving_player.number, clue)
         receiving_player.receive_clue(clue)
+        print receiving_player.knowledge
 
     def receive_clue(self, clue):
         game.remaining_clues -= 1
         clue_type = 'number' if type(clue) == int else 'color'
         for index, card in enumerate(self.hand):
             if getattr(card, clue_type) == clue:
-                print "%d matches" % index
+                print "Card %d matches" % index
                 self.knowledge[index][clue_type] = clue
 
 # Prepare to start playing games
@@ -103,16 +125,10 @@ for i in xrange(0, NUMBER_OF_GAMES):
             player.hand[i] = game.deck.pop()
         print player.hand
 
-    # Main loop
+    # Take turns loop
     while not game.game_over:
-        current_player = players[game.whose_turn]
-        if game.remaining_clues > 0:
-            current_player.give_clue('pink', players[0])
-            print players[0].knowledge
-        else:
-            current_player.play_card(0)
-        pprint(game.table)
-
+        player.take_turn()
+    
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
