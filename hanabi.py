@@ -39,12 +39,18 @@ class Game:
                 player.hand[i] = self.deck.pop()
             print player.hand
 
-    # def get_playable_cards(self):
-    #     playable_cards = []
-    #     dict_of_table_items = enumerate(self.table)
-    #     for color, card_list in enumerate(self.table):
-    #         # Which card is playable for this color?
-    #         playable_cards.append()
+    def get_playable_cards(self):
+        playable_cards = []
+        for color, card_list in enumerate(self.table):
+            if len(card_list) == 0:
+                playable_cards.append(Card(color, 1))
+            elif len(card_list) != 5:
+                top_card = card_list[-1]
+                playable_cards.append(Card(color, top_card.number+1))
+        return playable_cards
+
+    def get_useless_cards(self):
+        pass
 
 class Card(object):
 
