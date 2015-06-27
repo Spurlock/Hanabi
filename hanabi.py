@@ -1,6 +1,7 @@
 from __future__ import division
 from pprint import pprint
 import random
+import sys
 
 NUM_PLAYERS = 3
 HAND_SIZE = 5
@@ -16,7 +17,6 @@ class Game:
         self.game_over = False
         self.remaining_fuses = 3
         self.remaining_clues = 8
-        self.seats = 0
         self.whose_turn = 0
         self.last_turn = -1
         self.deck = []
@@ -32,6 +32,13 @@ class Game:
             self.deck.append(Card(color, 5))
         random.shuffle(self.deck)
 
+        # Deal initial hands
+        self.players = [Player(i) for i in xrange(0, NUM_PLAYERS)]
+        for player in self.players:
+            for i in xrange(0, HAND_SIZE):
+                player.hand[i] = self.deck.pop()
+            print player.hand
+
 
 class Card(object):
 
@@ -45,35 +52,33 @@ class Card(object):
 
 class Player:
 
-    def __init__(self):
+    def __init__(self, number):
         self.hand = [None] * HAND_SIZE
         self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
-        self.number = game.seats
-        game.seats += 1
+        self.number = number
 
     def take_turn(self):
-            current_player = players[game.whose_turn]
-            next_player = players[(game.whose_turn + 1) % NUM_PLAYERS]
-            print "player %d's turn" % current_player.number
-            if game.remaining_clues > 0:
-                current_player.give_clue(1, next_player)
-            else:
-                for index, card in enumerate(current_player.knowledge):
-                    if card['number'] == 1:
-                        card_up = index
-                        break
-                    else:
-                        card_up = 0
-                current_player.play_card(card_up)
-            pprint(game.table)
+
+        if game.remaining_clues > 0:
+            next_player = game.players[(self.number + 1) % NUM_PLAYERS]
+            self.give_clue(1, next_player)
+        else:
+            card_up = 0
+            for num, card in enumerate(self.knowledge):
+                if card['number'] == 1:
+                    card_up = num
+            self.play_card(card_up)
 
     def lose_card(self, index):
         lost = self.hand[index]
-        self.hand[index] = game.deck.pop()
+        self.hand[index] = game.deck.pop() if len(game.deck) > 0 else None
         self.knowledge[index] = {'color': None, 'number': None}
         return lost
 
     def play_card(self, index):
+        if self.hand[index] is None:
+            sys.exit("Error: Tried to play a nonexistent card.")
+
         played = self.lose_card(index)
 
         print "Playing %r" % played
@@ -95,9 +100,9 @@ class Player:
         game.graveyard.append(discarded)
 
     def give_clue(self, clue, receiving_player):
-        if receiving_player == players[game.whose_turn]:
+        if receiving_player is self:
             print "Can't give yourself a clue"
-            exit()
+            sys.exit()
         print "Giving Player %d a clue about %ss" % (receiving_player.number, clue)
         receiving_player.receive_clue(clue)
         print receiving_player.knowledge
@@ -118,16 +123,15 @@ for i in xrange(0, NUMBER_OF_GAMES):
     # Start a game
     game = Game()
 
-    # Deal initial hands
-    players = [Player() for i in xrange(0, NUM_PLAYERS)]
-    for player in players:
-        for i in xrange(0, HAND_SIZE):
-            player.hand[i] = game.deck.pop()
-        print player.hand
-
     # Take turns loop
     while not game.game_over:
-        player.take_turn()
+
+        current_player = game.players[game.whose_turn]
+
+        print "player %d's turn" % current_player.number
+        current_player.take_turn()
+
+        pprint(game.table)
     
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
