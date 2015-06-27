@@ -8,7 +8,7 @@ HAND_SIZE = 5
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-#Current 50 Game Average Score: 3.640000
+# Current 50 Game Average Score: 3.600000
 
 
 class Game:
@@ -66,7 +66,6 @@ class Player:
 
     def __init__(self, number):
         self.hand = [None] * HAND_SIZE
-        #self.knowledge = [dict([('color', None), ('number', None)]) for i in xrange(0, HAND_SIZE)]
         self.knowledge = [Card(None, None) for i in xrange(0, HAND_SIZE)]
         self.number = number
 
@@ -114,8 +113,8 @@ class Player:
 
     def give_clue(self, clue, receiving_player):
         if receiving_player is self:
-            print "Can't give yourself a clue"
-            sys.exit()
+            sys.exit("Can't give yourself a clue")
+            
         print "Giving Player %d a clue about %ss" % (receiving_player.number, clue)
         receiving_player.receive_clue(clue)
         print receiving_player.knowledge
