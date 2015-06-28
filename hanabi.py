@@ -144,6 +144,10 @@ class Player:
                 #print "Card %d matches" % index
                 setattr(self.knowledge[index], clue_type, clue)
 
+    def get_playable_cards_for_player(self, other_player):
+        if other_player is self:
+            sys.exit("Can't look at own cards.")
+
 # Prepare to start playing games
 random.seed(0)
 total_score = 0
