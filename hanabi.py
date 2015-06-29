@@ -98,7 +98,6 @@ class Player:
         my_playable_cards = self.get_playable_cards_for_player(self)
         next_player_playable_cards = self.get_playable_cards_for_player(next_player)
         useless_cards = game.get_useless_cards()
-        my_useless_cards = self.get_useless_cards_for_player(self)
 
         # Plays card from hand if one is known to be playable
         if len(my_playable_cards) > 0:
@@ -124,10 +123,7 @@ class Player:
                     self.play_card(position)
                     return
 
-            if len(my_useless_cards) > 0:
-                self.discard(my_useless_cards[0])
-            else:
-                self.discard(0)
+            self.discard(0)
 
     def lose_card(self, index):
         lost = self.hand[index]
@@ -195,23 +191,6 @@ class Player:
                     playable_cards_for_player.append(index)
         #print "Player %d's %s card is playable!" % (player.number, playable_cards_for_player)
         return playable_cards_for_player
-
-    def get_useless_cards_for_player(self, player):
-        useless_cards_for_player = []
-        if player is self:
-            # return useless cards from self knowledge
-            for index, card in enumerate(self.knowledge):
-                for useless_card in game.get_useless_cards():
-                    if card == useless_card:
-                        useless_cards_for_player.append(index)
-        else:
-            # return index of useless cards from player hand
-            useless_cards = game.get_useless_cards()
-            for index, card in enumerate(player.hand):
-                if card is not None and card in useless_cards:
-                    useless_cards_for_player.append(index)
-        #print "Player %d's %s card is useless!" % (player.number, playable_cards_for_player)
-        return useless_cards_for_player
 
 # Prepare to start playing games
 random.seed(0)
