@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 12.380000 *without last turn*
+# Current 50 Game Average Score: 12.180000 *without last turn*
 
 
 class Game:
@@ -83,6 +83,7 @@ class Card(object):
     def __eq__(self, other_card):
         if self.color == other_card.color and self.number == other_card.number:
             return True
+        return False
 
 
 class Player:
@@ -115,16 +116,14 @@ class Player:
                 self.give_clue(clue_up, next_player)
                 return
                 
-        # Plays known 1 or discards
+        # Play any non-useless 1s
         if not game.turn_taken:
-            card_up = None
-            for num, card in enumerate(self.knowledge):
+            for position, card in enumerate(self.knowledge):
                 if card.number == 1 and card not in useless_cards:
-                    card_up = num
-            if card_up is not None:
-                self.play_card(card_up)
-            else:
-                self.discard(0)
+                    self.play_card(position)
+                    return
+
+            self.discard(0)
 
     def lose_card(self, index):
         lost = self.hand[index]
