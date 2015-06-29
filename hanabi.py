@@ -6,10 +6,10 @@ import sys
 NUM_PLAYERS = 3
 HAND_SIZE = 5
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
-CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5:1}
+CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 11.980000 *without last turn*
+# Current 50 Game Average Score: 12.380000 *without last turn*
 
 
 class Game:
@@ -96,6 +96,7 @@ class Player:
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
         my_playable_cards = self.get_playable_cards_for_player(self)
         next_player_playable_cards = self.get_playable_cards_for_player(next_player)
+        useless_cards = game.get_useless_cards()
 
         # Plays card from hand if one is known to be playable
         if len(my_playable_cards) > 0:
@@ -118,7 +119,7 @@ class Player:
         if not game.turn_taken:
             card_up = None
             for num, card in enumerate(self.knowledge):
-                if card.number == 1:
+                if card.number == 1 and card not in useless_cards:
                     card_up = num
             if card_up is not None:
                 self.play_card(card_up)
@@ -161,7 +162,7 @@ class Player:
     def give_clue(self, clue, receiving_player):
         game.mark_turn_taken()
         if receiving_player is self:
-            sys.exit("Can't give yourself a clue")
+            sys.exit("Error: Can't give yourself a clue")
 
         #print "Giving Player %d a clue about %ss" % (receiving_player.number, clue)
         receiving_player.receive_clue(clue)
