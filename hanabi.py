@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 12.180000 *without last turn*
+# Current 50 Game Average Score: 12.680000
 
 
 class Game:
@@ -171,7 +171,7 @@ class Player:
         game.remaining_clues -= 1
         clue_type = 'number' if type(clue) == int else 'color'
         for index, card in enumerate(self.hand):
-            if getattr(card, clue_type) == clue:
+            if card is not None and getattr(card, clue_type) == clue:
                 #print "Card %d matches" % index
                 setattr(self.knowledge[index], clue_type, clue)
 
@@ -185,10 +185,10 @@ class Player:
                         playable_cards_for_player.append(index)
         else:
             # return index of playable cards from player hand
+            playable_cards = game.get_playable_cards()
             for index, card in enumerate(player.hand):
-                for playable_card in game.get_playable_cards():
-                    if card == playable_card:
-                        playable_cards_for_player.append(index)
+                if card is not None and card in playable_cards:
+                    playable_cards_for_player.append(index)
         #print "Player %d's %s card is playable!" % (player.number, playable_cards_for_player)
         return playable_cards_for_player
 
@@ -217,8 +217,6 @@ for i in xrange(0, NUMBER_OF_GAMES):
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
             if len(game.deck) <= 0:
-                game.game_over = True
-                #sys.exit("Last turn under construction")
                 game.last_turn += 1
         else:
             game.game_over = True
@@ -229,7 +227,6 @@ for i in xrange(0, NUMBER_OF_GAMES):
     pprint(game.table)
     print "Game Score: %d" % final_score
     print ""
-
 
     total_score += final_score
 
