@@ -208,6 +208,8 @@ for i in xrange(0, NUMBER_OF_GAMES):
 
         #print "player %d's turn" % current_player.number
         current_player.take_turn()
+        if not game.turn_taken:
+            sys.exit("Player failed to take an action!")
 
         #pprint(game.table)
     
