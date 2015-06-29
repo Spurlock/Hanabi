@@ -67,7 +67,6 @@ class Game:
         return useless_cards
 
     def mark_turn_taken(self):
-        print "marking!"
         if self.turn_taken:
             sys.exit("Tried to take an extra turn!")
         self.turn_taken = True
@@ -95,28 +94,28 @@ class Player:
 
     def take_turn(self):
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
+        my_playable_cards = self.get_playable_cards_for_player(self)
+        next_player_playable_cards = self.get_playable_cards_for_player(next_player)
 
         # Plays card from hand if one is known to be playable
-        if len(self.get_playable_cards_for_player(self)) > 0:
-            self.play_card(self.get_playable_cards_for_player(self)[0])
+        if len(my_playable_cards) > 0:
+            self.play_card(my_playable_cards[0])
 
         # If clues remain and next player has a playable card, gives clue about the card
-        elif game.remaining_clues > 0 and len(self.get_playable_cards_for_player(next_player)) > 0:
+        elif game.remaining_clues > 0 and len(next_player_playable_cards) > 0:
             clue_up = None
-            for playable_card in self.get_playable_cards_for_player(next_player):
-                for index, card in enumerate(next_player.knowledge):
-                    if index == playable_card:
-                        if card.number is None:
-                            clue_up = next_player.hand[index].number
-                        elif card.color is None:
-                            clue_up = next_player.hand[index].color
+            for playable_card_index in next_player_playable_cards:
+                card_knowledge = next_player.knowledge[playable_card_index]
+                if card_knowledge.number is None:
+                    clue_up = next_player.hand[playable_card_index].number
+                elif card_knowledge.color is None:
+                    clue_up = next_player.hand[playable_card_index].color
             if clue_up is not None:
                 self.give_clue(clue_up, next_player)
-            else:
-                self.discard(0)
+                return
                 
         # Plays known 1 or discards
-        else:
+        if not game.turn_taken:
             card_up = None
             for num, card in enumerate(self.knowledge):
                 if card.number == 1:
