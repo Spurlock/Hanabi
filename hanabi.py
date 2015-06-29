@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5:1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 11.380000 *without last turn*
+# Current 50 Game Average Score: 11.980000 *without last turn*
 
 
 class Game:
@@ -90,13 +90,10 @@ class Player:
     def take_turn(self):
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
 
-        # Play cards from hand if they are known to be playable
+        # Plays card from hand if one is known to be playable
         if len(self.get_playable_cards_for_player(self)) > 0:
-            for playable_card in self.get_playable_cards_for_player(self):
-                for index, card in enumerate(next_player.knowledge):
-                    if index == playable_card:
-                        self.play_card(index)
-
+            self.play_card(self.get_playable_cards_for_player(self)[0])
+                           
         # If clues remain and next player has a playable card, gives clue about the card
         elif game.remaining_clues > 0 and len(self.get_playable_cards_for_player(next_player)) > 0:
             clue_up = None
@@ -112,7 +109,7 @@ class Player:
             else:
                 self.discard(0)
                 
-        # Plays known ones or discards
+        # Plays known 1 or discards
         else:
             card_up = None
             for num, card in enumerate(self.knowledge):
@@ -176,15 +173,14 @@ class Player:
             for index, card in enumerate(self.knowledge):
                 for playable_card in game.get_playable_cards():
                     if card == playable_card:
-                        #print "Player %d's %d card is playable!" % (player.number, index)
                         playable_cards_for_player.append(index)
         else:
             # return index of playable cards from player hand
             for index, card in enumerate(player.hand):
                 for playable_card in game.get_playable_cards():
                     if card == playable_card:
-                        #print "Player %d's %d card is playable!" % (player.number, index)
                         playable_cards_for_player.append(index)
+        #print "Player %d's %s card is playable!" % (player.number, playable_cards_for_player)
         return playable_cards_for_player
 
 # Prepare to start playing games
@@ -209,8 +205,8 @@ for i in xrange(0, NUMBER_OF_GAMES):
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
             if len(game.deck) <= 0:
-                #game.game_over = True
-                sys.exit("Last turn under construction")
+                game.game_over = True
+                #sys.exit("Last turn under construction")
                 game.last_turn += 1
         else:
             game.game_over = True
