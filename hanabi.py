@@ -145,15 +145,20 @@ class Player:
                 setattr(self.knowledge[index], clue_type, clue)
 
     def get_playable_cards_for_player(self, player):
-        playable_cards_for_player = [None]
+        playable_cards_for_player = []
         if player is self:
-            sys.exit("Can't look at own cards.")
+            # return playable cards from self knowledge
+            for index, card in enumerate(self.knowledge):
+                for playable_card in game.get_playable_cards():
+                    if str(card) == str(playable_card):
+                        #print "Player %s's %d card is playable!" % player.number % index
+                        playable_cards_for_player.append(index)
         else:
             # return index of playable cards from player hand
             for index, card in enumerate(player.hand):
                 for playable_card in game.get_playable_cards():
                     if str(card) == str(playable_card):
-                        #print "Card %d is playable!" % index
+                        #print "Player %s's %d card is playable!" % player.number % index
                         playable_cards_for_player.append(index)
         return playable_cards_for_player
 
