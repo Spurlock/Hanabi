@@ -22,6 +22,7 @@ class Game:
         self.last_turn = -1
         self.deck = []
         self.graveyard = []
+        self.turn_taken = False
         self.table = {color: [] for color in COLORS}
 
         for color in COLORS:
@@ -65,6 +66,11 @@ class Game:
                         useless_cards.append(Card(color, higher_rank))
         return useless_cards
 
+    def mark_turn_taken(self):
+        print "marking!"
+        if self.turn_taken:
+            sys.exit("Tried to take an extra turn!")
+        self.turn_taken = True
 
 class Card(object):
 
@@ -93,7 +99,7 @@ class Player:
         # Plays card from hand if one is known to be playable
         if len(self.get_playable_cards_for_player(self)) > 0:
             self.play_card(self.get_playable_cards_for_player(self)[0])
-                           
+
         # If clues remain and next player has a playable card, gives clue about the card
         elif game.remaining_clues > 0 and len(self.get_playable_cards_for_player(next_player)) > 0:
             clue_up = None
@@ -129,6 +135,7 @@ class Player:
     def play_card(self, index):
         if self.hand[index] is None:
             sys.exit("Error: Tried to play a nonexistent card.")
+        game.mark_turn_taken()
 
         played = self.lose_card(index)
 
@@ -142,7 +149,9 @@ class Player:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
 
+
     def discard(self, index):
+        game.mark_turn_taken()
         discarded = self.lose_card(index)
 
         #print "Discarding %r" % discarded
@@ -151,6 +160,7 @@ class Player:
         game.graveyard.append(discarded)
 
     def give_clue(self, clue, receiving_player):
+        game.mark_turn_taken()
         if receiving_player is self:
             sys.exit("Can't give yourself a clue")
 
@@ -194,6 +204,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
     # Take turns loop
     while not game.game_over:
 
+        game.turn_taken = False
         current_player = game.players[game.whose_turn]
 
         #print "player %d's turn" % current_player.number
