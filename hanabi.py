@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5:1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 4.260000
+# Current 50 Game Average Score: 11.380000 *without last turn*
 
 
 class Game:
@@ -90,8 +90,29 @@ class Player:
     def take_turn(self):
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
 
-        if game.remaining_clues > 0:
-            self.give_clue(1, next_player)
+        # Play cards from hand if they are known to be playable
+        if len(self.get_playable_cards_for_player(self)) > 0:
+            for playable_card in self.get_playable_cards_for_player(self):
+                for index, card in enumerate(next_player.knowledge):
+                    if index == playable_card:
+                        self.play_card(index)
+
+        # If clues remain and next player has a playable card, gives clue about the card
+        elif game.remaining_clues > 0 and len(self.get_playable_cards_for_player(next_player)) > 0:
+            clue_up = None
+            for playable_card in self.get_playable_cards_for_player(next_player):
+                for index, card in enumerate(next_player.knowledge):
+                    if index == playable_card:
+                        if card.number is None:
+                            clue_up = next_player.hand[index].number
+                        elif card.color is None:
+                            clue_up = next_player.hand[index].color
+            if clue_up is not None:
+                self.give_clue(clue_up, next_player)
+            else:
+                self.discard(0)
+                
+        # Plays known ones or discards
         else:
             card_up = None
             for num, card in enumerate(self.knowledge):
@@ -188,6 +209,8 @@ for i in xrange(0, NUMBER_OF_GAMES):
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
             if len(game.deck) <= 0:
+                #game.game_over = True
+                sys.exit("Last turn under construction")
                 game.last_turn += 1
         else:
             game.game_over = True
