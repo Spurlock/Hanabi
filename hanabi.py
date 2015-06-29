@@ -75,6 +75,10 @@ class Card(object):
     def __repr__(self):
         return "%s %s" % (self.color, self.number)
 
+    def __eq__(self, other_card):
+        if self.color == other_card.color and self.number == other_card.number:
+            return True
+
 
 class Player:
 
@@ -150,15 +154,15 @@ class Player:
             # return playable cards from self knowledge
             for index, card in enumerate(self.knowledge):
                 for playable_card in game.get_playable_cards():
-                    if str(card) == str(playable_card):
-                        #print "Player %s's %d card is playable!" % player.number % index
+                    if card == playable_card:
+                        #print "Player %d's %d card is playable!" % (player.number, index)
                         playable_cards_for_player.append(index)
         else:
             # return index of playable cards from player hand
             for index, card in enumerate(player.hand):
                 for playable_card in game.get_playable_cards():
-                    if str(card) == str(playable_card):
-                        #print "Player %s's %d card is playable!" % player.number % index
+                    if card == playable_card:
+                        #print "Player %d's %d card is playable!" % (player.number, index)
                         playable_cards_for_player.append(index)
         return playable_cards_for_player
 
