@@ -84,9 +84,9 @@ class Player:
         self.number = number
 
     def take_turn(self):
+        next_player = game.players[(self.number + 1) % NUM_PLAYERS]
 
         if game.remaining_clues > 0:
-            next_player = game.players[(self.number + 1) % NUM_PLAYERS]
             self.give_clue(1, next_player)
         else:
             card_up = None
@@ -144,9 +144,18 @@ class Player:
                 #print "Card %d matches" % index
                 setattr(self.knowledge[index], clue_type, clue)
 
-    def get_playable_cards_for_player(self, other_player):
-        if other_player is self:
+    def get_playable_cards_for_player(self, player):
+        playable_cards_for_player = [None]
+        if player is self:
             sys.exit("Can't look at own cards.")
+        else:
+            # return index of playable cards from player hand
+            for index, card in enumerate(player.hand):
+                for playable_card in game.get_playable_cards():
+                    if str(card) == str(playable_card):
+                        #print "Card %d is playable!" % index
+                        playable_cards_for_player.append(index)
+        return playable_cards_for_player
 
 # Prepare to start playing games
 random.seed(0)
