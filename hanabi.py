@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 12.880000
+# Current 50 Game Average Score: 12.760000
 
 
 class Game:
@@ -19,7 +19,7 @@ class Game:
         self.remaining_fuses = 3
         self.remaining_clues = 8
         self.whose_turn = 0
-        self.last_turn = -1
+        self.last_turn = 0
         self.deck = []
         self.graveyard = []
         self.turn_taken = False
