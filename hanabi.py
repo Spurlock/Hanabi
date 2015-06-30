@@ -66,6 +66,19 @@ class Game:
                         useless_cards.append(Card(color, higher_rank))
         return useless_cards
 
+    # Returns any card that isnt useless and only has one left of its type
+    def get_reservable_cards(self):
+        reservable_cards = []
+        card_types = []
+        for color in COLORS:
+            for key in CARD_COUNTS:
+                card_types.append(Card(color, key))
+        for card in card_types:
+            if card not in self.get_useless_cards():
+                if self.graveyard.count(card) == CARD_COUNTS[card.number] - 1:
+                    reservable_cards.append(card) 
+        return reservable_cards
+
     def mark_turn_taken(self):
         if self.turn_taken:
             sys.exit("Tried to take an extra turn!")
