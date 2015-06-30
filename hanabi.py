@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 12.740000
+# Current 50 Game Average Score: 13.220000
 
 
 class Game:
@@ -146,7 +146,11 @@ class Player:
                 for position, card in enumerate(self.knowledge):
                     for reserved_card in my_reservable_cards:
                         if card is not None and card != reserved_card:
-                            trash = position
+                            card_down = position
+                    if card.number is None or card.color is None:
+                        card_down = position
+                    if card.number is None and card.color is None:
+                        card_down = position
                 if card_down is not None:
                     self.discard(card_down)
                 else:
