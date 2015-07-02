@@ -36,6 +36,7 @@ class Game:
         for player in self.players:
             for i in xrange(0, HAND_SIZE):
                 player.hand[i] = self.deck.pop()
+                player.hand_age[i] = i
             #print player.hand
 
     def get_playable_cards(self):
@@ -103,6 +104,7 @@ class Player:
 
     def __init__(self, number):
         self.hand = [None] * HAND_SIZE
+        self.hand_age = [None] * HAND_SIZE
         self.knowledge = [Card(None, None) for i in xrange(0, HAND_SIZE)]
         self.number = number
 
@@ -158,7 +160,12 @@ class Player:
 
     def lose_card(self, index):
         lost = self.hand[index]
-        self.hand[index] = game.deck.pop() if len(game.deck) > 0 else None
+        self.hand_age.remove(index)
+        if len(game.deck) > 0:
+            self.hand[index] = game.deck.pop()
+            self.hand_age.append(index)
+        else:
+            self.hand[index] = None
         self.knowledge[index] = Card(None, None)
         return lost
 
