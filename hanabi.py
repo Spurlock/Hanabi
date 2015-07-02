@@ -84,11 +84,12 @@ class Game:
     def get_reservable_cards(self):
         reservable_cards = []
         card_types = []
+        useless_cards = self.get_useless_cards()
         for color in COLORS:
             for key in CARD_COUNTS:
                 card_types.append(Card(color, key))
         for card in card_types:
-            if card not in self.get_useless_cards():
+            if card not in useless_cards:
                 if self.graveyard.count(card) == CARD_COUNTS[card.number] - 1:
                     reservable_cards.append(card) 
         return reservable_cards
@@ -126,18 +127,16 @@ class Player:
     def take_turn(self):
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
         my_playable_cards = self.get_playable_cards_for_player(self)
-        next_player_playable_cards = self.get_playable_cards_for_player(next_player)
-        useless_cards = game.get_useless_cards()
-        my_useless_cards = self.get_useless_cards_for_player(self)
-        reservable_cards = game.get_reservable_cards()
-        my_reservable_cards = self.get_reservable_cards_for_player(self)
 
         # Plays card from hand if one is known to be playable
         if len(my_playable_cards) > 0:
             self.play_card(my_playable_cards[0])
+            return
+
+        next_player_playable_cards = self.get_playable_cards_for_player(next_player)
 
         # If clues remain and next player has a playable card, gives clue about the card
-        elif game.remaining_clues > 0 and len(next_player_playable_cards) > 0:
+        if game.remaining_clues > 0 and len(next_player_playable_cards) > 0:
             clue_up = None
             for playable_card_index in next_player_playable_cards:
                 card_knowledge = next_player.knowledge[playable_card_index]
@@ -148,6 +147,11 @@ class Player:
             if clue_up is not None:
                 self.give_clue(clue_up, next_player)
                 return
+
+        useless_cards = game.get_useless_cards()
+        my_useless_cards = self.get_useless_cards_for_player(self)
+        reservable_cards = game.get_reservable_cards()
+        #my_reservable_cards = self.get_reservable_cards_for_player(self)
                 
         # Play any non-useless 1s
         if not game.turn_taken:
@@ -161,7 +165,7 @@ class Player:
             else:
                 card_down = None
                 for position, card in enumerate(self.knowledge):
-                    if card is not None and card not in game.get_reservable_cards():
+                    if card is not None and card not in reservable_cards:
                         card_down = position
                     if card.number is None or card.color is None:
                         card_down = position
@@ -301,15 +305,15 @@ class Player:
 
     def get_reservable_cards_for_player(self, player):
         reservable_cards_for_player = []
+        reservable_cards = game.get_reservable_cards()
         if player is self:
             #return reservable cards from self knowledge
             for index, card in enumerate(self.knowledge):
                 #5s are reservable without color knowledge
-                if card in game.get_reservable_cards() or card.number == 5:
+                if card in reservable_cards or card.number == 5:
                     reservable_cards_for_player.append(index)
         else:
             # return index of reservable cards from player hand
-            reservable_cards = game.get_reservable_cards()
             for index, card in enumerate(player.hand):
                 if card is not None and card in reservable_cards:
                     reservable_cards_for_player.append(index)
