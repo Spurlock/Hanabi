@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 14.040000
+# Current 50 Game Average Score: 13.48000
 
 
 class Game:
@@ -113,7 +113,6 @@ class Card(object):
             return True
         return False
 
-
 class Player:
 
     def __init__(self, number):
@@ -164,14 +163,28 @@ class Player:
                 self.discard(my_useless_cards[0])
             else:
                 card_down = None
-                for position, card in enumerate(self.knowledge):
-                    if card is not None and card not in reservable_cards:
-                        card_down = position
-                    if card.number is None or card.color is None:
-                        card_down = position
+                #checks for oldest card with no knowledge
+                for age in self.hand_age:
+                    card = self.knowledge[age]
                     if card.number is None and card.color is None:
-                        card_down = position
+                        card_down = age
                         break
+                if card_down is None:
+                    #checks for oldest card with half knowledge
+                    for age in self.hand_age:
+                        card = self.knowledge[age]
+                        if (card.number is None and card.color is not None)\
+                        or (card.number is not None and card.color is None):
+                            card_down = age
+                            break
+                if card_down is None:
+                    #checks for oldest non reservable card
+                    card_down = None
+                    for age in self.hand_age:
+                        card = self.knowledge[age]
+                        if card not in reservable_cards:
+                            card_down = age
+                            break
                 if card_down is not None:
                     self.discard(card_down)
                 else:
@@ -181,7 +194,7 @@ class Player:
         lost = self.hand[index]
         self.hand_age.remove(index)
         drawn_card = None
-        
+
         if len(game.deck) > 0:
             drawn_card = game.deck.pop()
             self.hand[index] = drawn_card
@@ -216,7 +229,6 @@ class Player:
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
-
 
     def discard(self, index):
         game.mark_turn_taken()
@@ -343,7 +355,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
             sys.exit("Player failed to take an action!")
 
         #pprint(game.table)
-    
+
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
