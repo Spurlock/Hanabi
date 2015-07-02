@@ -20,15 +20,11 @@ class Game:
         self.remaining_clues = 8
         self.whose_turn = 0
         self.last_turn = 0
-        self.deck = []
         self.graveyard = []
         self.turn_taken = False
         self.table = {color: [] for color in COLORS}
 
-        for color in COLORS:
-            for key, count in CARD_COUNTS.iteritems():
-                cards_to_add = [Card(color, key) for i in xrange(0, count)]
-                self.deck.extend(cards_to_add)
+        self.deck = self.build_deck()
         random.shuffle(self.deck)
 
         # Deal initial hands
@@ -37,6 +33,14 @@ class Game:
             for i in xrange(0, HAND_SIZE):
                 player.hand[i] = self.deck.pop()
             #print player.hand
+
+    def build_deck(self):
+        deck = []
+        for color in COLORS:
+            for key, count in CARD_COUNTS.iteritems():
+                cards_to_add = [Card(color, key) for i in xrange(0, count)]
+                deck.extend(cards_to_add)
+        return deck
 
     def get_playable_cards(self):
         playable_cards = []
@@ -66,6 +70,16 @@ class Game:
                         useless_cards.append(Card(color, higher_rank))
         return useless_cards
 
+    def get_unseen_cards(self):
+        deck = self.build_deck()
+        for card in self.graveyard:
+            deck.remove(card)
+        for color, card_stack in self.table.iteritems():
+            for card in card_stack:
+                deck.remove(card)
+        return deck
+
+
     def mark_turn_taken(self):
         if self.turn_taken:
             sys.exit("Tried to take an extra turn!")
@@ -91,6 +105,8 @@ class Player:
     def __init__(self, number):
         self.hand = [None] * HAND_SIZE
         self.knowledge = [Card(None, None) for i in xrange(0, HAND_SIZE)]
+        self.private_knowledge = []  # What I know
+        self.public_knowledge = []  # What everyone knows I know
         self.number = number
 
     def take_turn(self):
@@ -131,8 +147,17 @@ class Player:
 
     def lose_card(self, index):
         lost = self.hand[index]
-        self.hand[index] = game.deck.pop() if len(game.deck) > 0 else None
+        drawn_card = game.deck.pop() if len(game.deck) > 0 else None
+        self.hand[index] = drawn_card
         self.knowledge[index] = Card(None, None)
+        self.public_knowledge[index] = game.get_unseen_cards()
+        self.private_knowledge[index] = game.get_unseen_cards()
+
+        # other players see the card you just grabbed and update their private knowledge
+        if drawn_card:
+            for player in game.players:
+                if player is not self:
+                    player.remove_from_private_knowledge(drawn_card)
         return lost
 
     def play_card(self, index):
@@ -174,10 +199,19 @@ class Player:
     def receive_clue(self, clue):
         game.remaining_clues -= 1
         clue_type = 'number' if type(clue) == int else 'color'
+        matches = []
         for index, card in enumerate(self.hand):
             if card is not None and getattr(card, clue_type) == clue:
-                #print "Card %d matches" % index
                 setattr(self.knowledge[index], clue_type, clue)
+                matches.append(index)
+
+        for i in xrange(0, HAND_SIZE):
+            if i in matches:
+                self.public_knowledge[i] = [card for card in self.public_knowledge[i] if getattr(card, clue_type) == clue]
+                self.private_knowledge[i] = [card for card in self.private_knowledge[i] if getattr(card, clue_type) == clue]
+            else:
+                self.public_knowledge[i] = [card for card in self.public_knowledge[i] if getattr(card, clue_type) != clue]
+                self.private_knowledge[i] = [card for card in self.private_knowledge[i] if getattr(card, clue_type) != clue]
 
     def get_playable_cards_for_player(self, player):
         playable_cards_for_player = []
@@ -213,6 +247,23 @@ class Player:
         #print "Player %d's %s card is useless!" % (player.number, playable_cards_for_player)
         return useless_cards_for_player
 
+    def init_knowledge(self):
+        self.public_knowledge = [game.build_deck()] * HAND_SIZE
+
+        private_deck = game.build_deck()
+        other_players = [player for player in game.players if player is not self]
+        for player in other_players:
+            for card in player.hand:
+                private_deck.remove(card)
+
+        self.private_knowledge = [private_deck] * HAND_SIZE
+
+    def remove_from_private_knowledge(self, card):
+        for card_list in self.private_knowledge:
+            if card in card_list:
+                card_list.remove(card)
+
+
 # Prepare to start playing games
 random.seed(0)
 total_score = 0
@@ -220,6 +271,9 @@ total_score = 0
 for i in xrange(0, NUMBER_OF_GAMES):
     # Start a game
     game = Game()
+
+    for player in game.players:
+        player.init_knowledge()
 
     # Take turns loop
     while not game.game_over:
