@@ -149,8 +149,8 @@ class Player:
 
         useless_cards = game.get_useless_cards()
         my_useless_cards = self.get_useless_cards_for_player(self)
-        reservable_cards = game.get_reservable_cards()
-        #my_reservable_cards = self.get_reservable_cards_for_player(self)
+        # reservable_cards = game.get_reservable_cards()
+        my_reservable_cards = self.get_reservable_cards_for_player(self)
                 
         # Play any non-useless 1s
         if not game.turn_taken:
@@ -163,28 +163,17 @@ class Player:
                 self.discard(my_useless_cards[0])
             else:
                 card_down = None
-                #checks for oldest card with no knowledge
+
+                discardables = [index for index, card in enumerate(self.knowledge) if card.color is None and card.number is None]
+                if len(discardables) < 1:
+                    discardables = [index for index, card in enumerate(self.knowledge) if card.color is None or card.number is None]
+                if len(discardables) < 1:
+                    discardables = [index for index, card in enumerate(self.knowledge) if index not in my_reservable_cards]
+
                 for age in self.hand_age:
-                    card = self.knowledge[age]
-                    if card.number is None and card.color is None:
+                    if age in discardables:
                         card_down = age
-                        break
-                if card_down is None:
-                    #checks for oldest card with half knowledge
-                    for age in self.hand_age:
-                        card = self.knowledge[age]
-                        if (card.number is None and card.color is not None)\
-                        or (card.number is not None and card.color is None):
-                            card_down = age
-                            break
-                if card_down is None:
-                    #checks for oldest non reservable card
-                    card_down = None
-                    for age in self.hand_age:
-                        card = self.knowledge[age]
-                        if card not in reservable_cards:
-                            card_down = age
-                            break
+
                 if card_down is not None:
                     self.discard(card_down)
                 else:
@@ -319,9 +308,9 @@ class Player:
         reservable_cards_for_player = []
         reservable_cards = game.get_reservable_cards()
         if player is self:
-            #return reservable cards from self knowledge
+            # return reservable cards from self knowledge
             for index, card in enumerate(self.knowledge):
-                #5s are reservable without color knowledge
+                # 5s are reservable without color knowledge
                 if card in reservable_cards or card.number == 5:
                     reservable_cards_for_player.append(index)
         else:
