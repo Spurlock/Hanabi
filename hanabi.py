@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 15.54000
+# Current 50 Game Average Score: 15.68000
 
 
 class Game:
@@ -254,56 +254,32 @@ class Player:
                 self.public_knowledge[i] = [card for card in self.public_knowledge[i] if getattr(card, clue_type) != clue]
                 self.private_knowledge[i] = [card for card in self.private_knowledge[i] if getattr(card, clue_type) != clue]
 
-    def get_playable_cards_for_player(self, player):
-        playable_cards_for_player = []
-        playable_cards = game.get_playable_cards()
+    def get_cards_in_list(self, player, card_list):
+        player_card_matches = []
         if player is self:
-            for index, card_list in enumerate(self.private_knowledge):
-                hits = [True for possible_card in card_list if possible_card in playable_cards]
-                if len(hits) == len(card_list):
-                    playable_cards_for_player.append(index)
+            for index, possibilities in enumerate(self.private_knowledge):
+                hits = [True for possible_card in possibilities if possible_card in card_list]
+                if len(hits) == len(possibilities):
+                    player_card_matches.append(index)
 
         else:
             # return index of playable cards from player hand
             for index, card in enumerate(player.hand):
-                if card is not None and card in playable_cards:
-                    playable_cards_for_player.append(index)
-        #print "Player %d's %s card is playable!" % (player.number, playable_cards_for_player)
-        return playable_cards_for_player
+                if card is not None and card in card_list:
+                    player_card_matches.append(index)
+        return player_card_matches
+
+    def get_playable_cards_for_player(self, player):
+        playable_cards = game.get_playable_cards()
+        return self.get_cards_in_list(player, playable_cards)
 
     def get_useless_cards_for_player(self, player):
-        useless_cards_for_player = []
         useless_cards = game.get_useless_cards()
-        if player is self:
-            # return useless cards from self knowledge
-            for index, card_list in enumerate(self.private_knowledge):
-                hits = [True for possible_card in card_list if possible_card in useless_cards]
-                if len(hits) == len(card_list):
-                    useless_cards_for_player.append(index)
-        else:
-            # return index of useless cards from player hand
-            for index, card in enumerate(player.hand):
-                if card is not None and card in useless_cards:
-                    useless_cards_for_player.append(index)
-        #print "Player %d's %s card is useless!" % (player.number, useless_cards_for_player)
-        return useless_cards_for_player
+        return self.get_cards_in_list(player, useless_cards)
 
     def get_reserved_cards_for_player(self, player):
-        reserved_cards_for_player = []
         reserved_cards = game.get_reserved_cards()
-        if player is self:
-            # return reserved cards from self knowledge
-            for index, card_list in enumerate(self.private_knowledge):
-                hits = [True for possible_card in card_list if possible_card in reserved_cards]
-                if len(hits) == len(card_list):
-                    reserved_cards_for_player.append(index)
-        else:
-            # return index of reserved cards from player hand
-            for index, card in enumerate(player.hand):
-                if card is not None and card in reserved_cards:
-                    reserved_cards_for_player.append(index)
-        #print "Player %d's %s card is reserved!" % (player.number, reserved_cards_for_player)
-        return reserved_cards_for_player
+        return self.get_cards_in_list(player, reserved_cards)
 
     def init_knowledge(self):
         self.public_knowledge = [game.build_deck()] * HAND_SIZE
