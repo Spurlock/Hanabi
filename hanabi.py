@@ -314,7 +314,7 @@ class Player:
             for card in player.hand:
                 private_deck.remove(card)
 
-        self.private_knowledge = [private_deck] * HAND_SIZE
+        self.private_knowledge = [list(private_deck) for i in xrange(0, HAND_SIZE)]
 
     def remove_from_private_knowledge(self, card):
         for card_list in self.private_knowledge:
