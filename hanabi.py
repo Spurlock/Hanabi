@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 15.68000
+# Current 50 Game Average Score: 15.94000
 
 
 class Game:
@@ -152,18 +152,10 @@ class Player:
         # reserved_cards = game.get_reserved_cards()
         my_reserved_cards = self.get_reserved_cards_for_player(self)
                 
-        # Play any non-useless 1s
         if not game.turn_taken:
-            for position, card in enumerate(self.knowledge):
-                if card.number == 1 and card not in useless_cards:
-                    self.play_card(position)
-                    return
-
             if len(my_useless_cards) > 0:
                 self.discard(my_useless_cards[0])
             else:
-                card_down = None
-
                 discardables = [index for index, card in enumerate(self.knowledge) if card.color is None and card.number is None]
                 if len(discardables) < 1:
                     discardables = [index for index, card in enumerate(self.knowledge) if card.color is None or card.number is None]
@@ -172,12 +164,11 @@ class Player:
 
                 for age in self.hand_age:
                     if age in discardables:
-                        card_down = age
+                        self.discard(age)
+                        return
 
-                if card_down is not None:
-                    self.discard(card_down)
-                else:
-                    self.discard(0)
+        if not game.turn_taken:
+            self.discard(0)
 
     def lose_card(self, index):
         lost = self.hand[index]
