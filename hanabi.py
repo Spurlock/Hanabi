@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 15.74000
+# Current 50 Game Average Score: 15.54000
 
 
 class Game:
