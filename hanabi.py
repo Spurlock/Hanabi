@@ -46,11 +46,8 @@ class Game:
     def get_playable_cards(self):
         playable_cards = []
         for color, card_list in self.table.iteritems():
-            if len(card_list) == 0:
-                playable_cards.append(Card(color, 1))
-            elif len(card_list) != 5:
-                top_card = card_list[-1]
-                playable_cards.append(Card(color, top_card.number+1))
+            if len(card_list) < 5:
+                playable_cards.append(Card(color, len(card_list) + 1))
         return playable_cards
 
     def get_useless_cards(self):
@@ -71,6 +68,8 @@ class Game:
                         useless_cards.append(Card(color, higher_rank))
         return useless_cards
 
+    # TODO: Rather than recompute this every time, just add an unseen_cards property to the game,
+    # and update it every time a card is played or discarded
     def get_unseen_cards(self):
         deck = self.build_deck()
         for card in self.graveyard:
@@ -88,6 +87,7 @@ class Game:
         for color in COLORS:
             for key in CARD_COUNTS:
                 card_types.append(Card(color, key))
+
         for card in card_types:
             if card not in useless_cards:
                 if self.graveyard.count(card) == CARD_COUNTS[card.number] - 1:
@@ -118,23 +118,25 @@ class Player:
     def __init__(self, number):
         self.hand = [None] * HAND_SIZE
         self.hand_age = [None] * HAND_SIZE
-        self.knowledge = [Card(None, None) for i in xrange(0, HAND_SIZE)]
+        self.knowledge = [Card(None, None) for _ in xrange(0, HAND_SIZE)]
         self.private_knowledge = []  # What I know
         self.public_knowledge = []  # What everyone knows I know
         self.number = number
 
     def take_turn(self):
-        next_player = game.players[(self.number + 1) % NUM_PLAYERS]
-        my_playable_cards = self.get_playable_cards_for_player(self)
 
-        # Plays card from hand if one is known to be playable
+        # Play a card from my hand if one is known to be playable
+        my_playable_cards = self.get_known_playable_cards(self)
         if len(my_playable_cards) > 0:
             self.play_card(my_playable_cards[0])
             return
 
+        # If clues remain and next player has a playable card, gives clue about the card
+        # TODO: Use get_known_playable_cards to better check whether the player actually needs clues
+        # TODO: If next player doesn't need a clue, consider the player after that
+        next_player = game.players[(self.number + 1) % NUM_PLAYERS]
         next_player_playable_cards = self.get_playable_cards_for_player(next_player)
 
-        # If clues remain and next player has a playable card, gives clue about the card
         if game.remaining_clues > 0 and len(next_player_playable_cards) > 0:
             clue_up = None
             for playable_card_index in next_player_playable_cards:
@@ -148,9 +150,9 @@ class Player:
                 return
 
         useless_cards = game.get_useless_cards()
-        my_useless_cards = self.get_useless_cards_for_player(self)
+        my_useless_cards = self.get_known_useless_cards(self)
         # reserved_cards = game.get_reserved_cards()
-        my_reserved_cards = self.get_reserved_cards_for_player(self)
+        my_reserved_cards = self.get_known_reserved_cards(self)
                 
         if not game.turn_taken:
             if len(my_useless_cards) > 0:
@@ -168,6 +170,7 @@ class Player:
                         return
 
         if not game.turn_taken:
+            print "*** WARNING! Using stupid discard! ***"
             self.discard(0)
 
     def lose_card(self, index):
@@ -202,9 +205,7 @@ class Player:
 
         #print "Playing %r" % played
 
-        if len(game.table[played.color]) == 0 and played.number == 1:
-            game.table[played.color].append(played)
-        elif len(game.table[played.color]) > 0 and game.table[played.color][-1].number == played.number - 1:
+        if played in game.get_playable_cards():
             game.table[played.color].append(played)
         else:
             game.graveyard.append(played)
@@ -232,6 +233,7 @@ class Player:
         game.remaining_clues -= 1
         clue_type = 'number' if type(clue) == int else 'color'
         matches = []
+        # TODO: It's illegal to give a clue that the receiving player has zero of something, so check for that
         for index, card in enumerate(self.hand):
             if card is not None and getattr(card, clue_type) == clue:
                 setattr(self.knowledge[index], clue_type, clue)
@@ -246,17 +248,21 @@ class Player:
                 self.private_knowledge[i] = [card for card in self.private_knowledge[i] if getattr(card, clue_type) != clue]
 
     def get_cards_in_list(self, player, card_list):
-        player_card_matches = []
         if player is self:
-            for index, possibilities in enumerate(self.private_knowledge):
+            sys.exit("Can't call get_cards_in_list on self. Use get_known_cards_in_list instead.")
+
+        player_card_matches = []
+        for index, card in enumerate(player.hand):
+            if card is not None and card in card_list:
+                player_card_matches.append(index)
+        return player_card_matches
+
+    def get_known_cards_in_list(self, player, card_list):
+        player_card_matches = []
+        knowledge = player.private_knowledge if player is self else player.public_knowledge
+        for index, possibilities in enumerate(knowledge):
                 hits = [True for possible_card in possibilities if possible_card in card_list]
                 if len(hits) == len(possibilities):
-                    player_card_matches.append(index)
-
-        else:
-            # return index of playable cards from player hand
-            for index, card in enumerate(player.hand):
-                if card is not None and card in card_list:
                     player_card_matches.append(index)
         return player_card_matches
 
@@ -272,6 +278,18 @@ class Player:
         reserved_cards = game.get_reserved_cards()
         return self.get_cards_in_list(player, reserved_cards)
 
+    def get_known_playable_cards(self, player):
+        playable_cards = game.get_playable_cards()
+        return self.get_known_cards_in_list(player, playable_cards)
+
+    def get_known_useless_cards(self, player):
+        useless_cards = game.get_useless_cards()
+        return self.get_known_cards_in_list(player, useless_cards)
+
+    def get_known_reserved_cards(self, player):
+        reserved_cards = game.get_reserved_cards()
+        return self.get_known_cards_in_list(player, reserved_cards)
+
     def init_knowledge(self):
         self.public_knowledge = [game.build_deck()] * HAND_SIZE
 
@@ -281,7 +299,7 @@ class Player:
             for card in player.hand:
                 private_deck.remove(card)
 
-        self.private_knowledge = [list(private_deck) for i in xrange(0, HAND_SIZE)]
+        self.private_knowledge = [list(private_deck) for _ in xrange(0, HAND_SIZE)]
 
     def remove_from_private_knowledge(self, card):
         for card_list in self.private_knowledge:
@@ -296,6 +314,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
     # Start a game
     game = Game()
 
+    # TODO: Move init_knowledge stuff into game's constructor
     for player in game.players:
         player.init_knowledge()
 
@@ -320,7 +339,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
         else:
             game.game_over = True
 
-    color_scores = [len(color) for color in game.table.values()]
+    color_scores = [len(card_list) for card_list in game.table.values()]
     final_score = sum(color_scores)
     print "Final Table:"
     pprint(game.table)
@@ -329,6 +348,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
 
     total_score += final_score
 
+# TODO: Also print best and worst game scores
 average_score = total_score / NUMBER_OF_GAMES
 print "*****"
 print "Average Score: %f" % average_score
