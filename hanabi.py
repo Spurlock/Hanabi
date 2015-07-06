@@ -9,7 +9,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 15.94000
+# Current 50 Game Average Score: 16.16000
 
 
 class Game:
@@ -207,6 +207,8 @@ class Player:
 
         if played in game.get_playable_cards():
             game.table[played.color].append(played)
+            if played.number == 5:
+                game.remaining_clues += 1
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
