@@ -4,7 +4,12 @@ import random
 import sys
 
 NUM_PLAYERS = 3
-HAND_SIZE = 5 # TODO: Compute HAND_SIZE from NUM_PLAYERS, for easier testing of different size games
+if 1 < NUM_PLAYERS < 4:
+    HAND_SIZE = 5
+elif 3 < NUM_PLAYERS < 5:
+    HAND_SIZE = 4
+else:
+    sys.exit("Error: Game requires 2-5 players")
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
