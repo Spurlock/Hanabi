@@ -4,7 +4,7 @@ import random
 import sys
 
 NUM_PLAYERS = 3
-HAND_SIZE = 5
+HAND_SIZE = 5 # TODO: Compute HAND_SIZE from NUM_PLAYERS, for easier testing of different size games
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
@@ -99,6 +99,7 @@ class Game:
             sys.exit("Tried to take an extra turn!")
         self.turn_taken = True
 
+
 class Card(object):
 
     def __init__(self, color, number):
@@ -112,6 +113,7 @@ class Card(object):
         if self.color == other_card.color and self.number == other_card.number:
             return True
         return False
+
 
 class Player:
 
@@ -149,9 +151,9 @@ class Player:
                 self.give_clue(clue_up, next_player)
                 return
 
-        useless_cards = game.get_useless_cards()
+        #useless_cards = game.get_useless_cards()
         my_useless_cards = self.get_known_useless_cards(self)
-        # reserved_cards = game.get_reserved_cards()
+        #reserved_cards = game.get_reserved_cards()
         my_reserved_cards = self.get_known_reserved_cards(self)
                 
         if not game.turn_taken:
