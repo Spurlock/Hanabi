@@ -215,7 +215,7 @@ class Player:
         if played in game.get_playable_cards():
             game.table[played.color].append(played)
             if played.number == 5:
-                game.remaining_clues += 1
+                game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
@@ -242,11 +242,13 @@ class Player:
         game.remaining_clues -= 1
         clue_type = 'number' if type(clue) == int else 'color'
         matches = []
-        # TODO: It's illegal to give a clue that the receiving player has zero of something, so check for that
         for index, card in enumerate(self.hand):
             if card is not None and getattr(card, clue_type) == clue:
                 setattr(self.knowledge[index], clue_type, clue)
                 matches.append(index)
+
+        if matches == []:
+            sys.exit("Error: It's illegal to give a clue that the receiving player has zero of something")
 
         for i in xrange(0, HAND_SIZE):
             if i in matches:
