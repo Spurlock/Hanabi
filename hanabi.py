@@ -4,17 +4,13 @@ import random
 import sys
 
 NUM_PLAYERS = 3
-if 1 < NUM_PLAYERS < 4:
-    HAND_SIZE = 5
-elif 3 < NUM_PLAYERS < 5:
-    HAND_SIZE = 4
-else:
-    sys.exit("Error: Game requires 2-5 players")
+HAND_SIZE = 5 if NUM_PLAYERS < 4 else 4
 COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-FINAL_SCORES = []
+FINAL_SCORES = []  # TODO: final scores shouldn't be uppercase because it isn't a constant.
+
 # Current 50 Game Scores:
 # Best: 19
 # Worst: 11
@@ -187,6 +183,8 @@ class Player:
         else:
             self.hand[index] = None
 
+        # TODO: update this guys pub/priv knowledge, removing the card he just lost
+
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
         self.private_knowledge[index] = [card for card in game.unseen_cards]
@@ -314,7 +312,6 @@ class Player:
 
 # Prepare to start playing games
 random.seed(0)
-total_score = 0
 
 for i in xrange(0, NUMBER_OF_GAMES):
     # Start a game
@@ -326,6 +323,9 @@ for i in xrange(0, NUMBER_OF_GAMES):
 
     # Take turns loop
     while not game.game_over:
+
+        # TODO: Validate the player's public and private knowledge. Basically, make sure that
+        # each card's actual value is one of the possibilities he's considering for that card.
 
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
@@ -353,14 +353,13 @@ for i in xrange(0, NUMBER_OF_GAMES):
     print ""
 
     FINAL_SCORES.append(final_score)
-    total_score += final_score
 
 best_score = max(score for score in FINAL_SCORES)
 worst_score = min(score for score in FINAL_SCORES)
-average_score = total_score / NUMBER_OF_GAMES
+average_score = sum(FINAL_SCORES) / NUMBER_OF_GAMES
 print "*****"
 print "Out of %i Games:" % NUMBER_OF_GAMES
 print "*****"
 print "Best Score: %i" % best_score
-print "Worst Score: %i" %worst_score
+print "Worst Score: %i" % worst_score
 print "Average Score: %f" % average_score
