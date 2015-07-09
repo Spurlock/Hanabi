@@ -14,7 +14,11 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 16.18000
+FINAL_SCORES = []
+# Current 50 Game Scores:
+# Best: 19
+# Worst: 11
+# Average: 16.18000
 
 
 class Game:
@@ -348,9 +352,15 @@ for i in xrange(0, NUMBER_OF_GAMES):
     print "Game Score: %d" % final_score
     print ""
 
+    FINAL_SCORES.append(final_score)
     total_score += final_score
 
-# TODO: Also print best and worst game scores
+best_score = max(score for score in FINAL_SCORES)
+worst_score = min(score for score in FINAL_SCORES)
 average_score = total_score / NUMBER_OF_GAMES
 print "*****"
+print "Out of %i Games:" % NUMBER_OF_GAMES
+print "*****"
+print "Best Score: %i" % best_score
+print "Worst Score: %i" %worst_score
 print "Average Score: %f" % average_score
