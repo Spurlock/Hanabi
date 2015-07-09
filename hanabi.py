@@ -14,7 +14,7 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-# Current 50 Game Average Score: 16.16000
+# Current 50 Game Average Score: 16.18000
 
 
 class Game:
@@ -25,6 +25,7 @@ class Game:
         self.remaining_clues = 8
         self.whose_turn = 0
         self.last_turn = 0
+        self.unseen_cards = self.build_deck()
         self.graveyard = []
         self.turn_taken = False
         self.table = {color: [] for color in COLORS}
@@ -72,17 +73,6 @@ class Game:
                     for higher_rank in xrange(rank + 1, 6):
                         useless_cards.append(Card(color, higher_rank))
         return useless_cards
-
-    # TODO: Rather than recompute this every time, just add an unseen_cards property to the game,
-    # and update it every time a card is played or discarded
-    def get_unseen_cards(self):
-        deck = self.build_deck()
-        for card in self.graveyard:
-            deck.remove(card)
-        for color, card_stack in self.table.iteritems():
-            for card in card_stack:
-                deck.remove(card)
-        return deck
 
     # Returns any card that isn't useless and only has one left of its type
     def get_reserved_cards(self):
@@ -182,6 +172,7 @@ class Player:
 
     def lose_card(self, index):
         lost = self.hand[index]
+        game.unseen_cards.remove(lost)
         self.hand_age.remove(index)
         drawn_card = None
 
@@ -193,8 +184,8 @@ class Player:
             self.hand[index] = None
 
         self.knowledge[index] = Card(None, None)
-        self.public_knowledge[index] = game.get_unseen_cards()
-        self.private_knowledge[index] = game.get_unseen_cards()
+        self.public_knowledge[index] = [card for card in game.unseen_cards]
+        self.private_knowledge[index] = [card for card in game.unseen_cards]
 
         # other players see the card you just grabbed and update their private knowledge
         if drawn_card:
