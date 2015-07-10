@@ -9,12 +9,12 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
-FINAL_SCORES = []  # TODO: final scores shouldn't be uppercase because it isn't a constant.
+final_scores = []
 
 # Current 50 Game Scores:
-# Best: 19
-# Worst: 11
-# Average: 16.18000
+# Best: 20
+# Worst: 14
+# Average: 16.98000
 
 
 class Game:
@@ -129,22 +129,35 @@ class Player:
             return
 
         # If clues remain and next player has a playable card, gives clue about the card
-        # TODO: Use get_known_playable_cards to better check whether the player actually needs clues
-        # TODO: If next player doesn't need a clue, consider the player after that
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
         next_player_playable_cards = self.get_playable_cards_for_player(next_player)
+        players_after_next = self.get_players_after_next()
 
-        if game.remaining_clues > 0 and len(next_player_playable_cards) > 0:
+        if game.remaining_clues > 0:
             clue_up = None
-            for playable_card_index in next_player_playable_cards:
-                card_knowledge = next_player.knowledge[playable_card_index]
-                if card_knowledge.number is None:
-                    clue_up = next_player.hand[playable_card_index].number
-                elif card_knowledge.color is None:
-                    clue_up = next_player.hand[playable_card_index].color
-            if clue_up is not None:
-                self.give_clue(clue_up, next_player)
-                return
+            if len(next_player_playable_cards) > 0 and len(self.get_known_playable_cards(next_player)) == 0:
+                for playable_card_index in next_player_playable_cards:
+                    card_knowledge = next_player.knowledge[playable_card_index]
+                    if card_knowledge.number is None:
+                        clue_up = next_player.hand[playable_card_index].number
+                    elif card_knowledge.color is None:
+                        clue_up = next_player.hand[playable_card_index].color
+                if clue_up is not None:
+                    self.give_clue(clue_up, next_player)
+                    return
+
+            # If the next player already knows they have a playable card, gives clue to the player after them
+            for player in players_after_next:
+                if len(self.get_playable_cards_for_player(player)) > 0 and len(self.get_known_playable_cards(player)) == 0:
+                    for playable_card_index in self.get_playable_cards_for_player(player):
+                        card_knowledge = player.knowledge[playable_card_index]
+                        if card_knowledge.number is None:
+                            clue_up = player.hand[playable_card_index].number
+                        elif card_knowledge.color is None:
+                            clue_up = player.hand[playable_card_index].color
+                    if clue_up is not None:
+                        self.give_clue(clue_up, player)
+                        return
 
         #useless_cards = game.get_useless_cards()
         my_useless_cards = self.get_known_useless_cards(self)
@@ -294,6 +307,15 @@ class Player:
         reserved_cards = game.get_reserved_cards()
         return self.get_known_cards_in_list(player, reserved_cards)
 
+    # returns players in order of turn after next player, up to the current player
+    def get_players_after_next(self):
+        players_after_next = []
+        number = (self.number + 2) % NUM_PLAYERS
+        for i in xrange(0, NUM_PLAYERS - 2):
+            players_after_next.append(game.players[number])
+            number = (number + 1) % NUM_PLAYERS
+        return players_after_next
+
     def init_knowledge(self):
         self.public_knowledge = [game.build_deck()] * HAND_SIZE
 
@@ -352,11 +374,11 @@ for i in xrange(0, NUMBER_OF_GAMES):
     print "Game Score: %d" % final_score
     print ""
 
-    FINAL_SCORES.append(final_score)
+    final_scores.append(final_score)
 
-best_score = max(score for score in FINAL_SCORES)
-worst_score = min(score for score in FINAL_SCORES)
-average_score = sum(FINAL_SCORES) / NUMBER_OF_GAMES
+best_score = max(score for score in final_scores)
+worst_score = min(score for score in final_scores)
+average_score = sum(final_scores) / NUMBER_OF_GAMES
 print "*****"
 print "Out of %i Games:" % NUMBER_OF_GAMES
 print "*****"
