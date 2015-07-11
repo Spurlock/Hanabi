@@ -14,7 +14,7 @@ final_scores = []
 # Current 50 Game Scores:
 # Best: 20
 # Worst: 14
-# Average: 16.98000
+# Average: 17.06000
 
 
 class Game:
@@ -208,7 +208,8 @@ class Player:
         else:
             self.hand[index] = None
 
-        # TODO: update this guys pub/priv knowledge, removing the card he just lost
+        self.remove_from_public_knowledge(lost)
+        self.remove_from_private_knowledge(lost)
 
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
@@ -333,6 +334,11 @@ class Player:
             if card in card_list:
                 card_list.remove(card)
 
+    def remove_from_public_knowledge(self, card):
+        for card_list in self.public_knowledge:
+            if card in card_list:
+                card_list.remove(card)
+
 # Prepare to start playing games
 random.seed(0)
 
@@ -344,7 +350,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
     while not game.game_over:
 
         # TODO: Validate the player's public and private knowledge. Basically, make sure that
-        # each card's actual value is one of the possibilities he's considering for that card.
+        # each card's actual value is one of the possibilities he's considering for that card.            
 
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
