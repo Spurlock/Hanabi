@@ -342,18 +342,22 @@ class Player:
 # Prepare to start playing games
 random.seed(0)
 
-for i in xrange(0, NUMBER_OF_GAMES):
+for game_number in xrange(0, NUMBER_OF_GAMES):
     # Start a game
     game = Game()
+    turn = 1
 
     # Take turns loop
     while not game.game_over:
 
-        # TODO: Validate the player's public and private knowledge. Basically, make sure that
-        # each card's actual value is one of the possibilities he's considering for that card.            
-
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
+
+        # Validates the player's public and private knowledge.
+        for index, card in enumerate(current_player.hand):
+            if card not in current_player.public_knowledge[index] or card not in current_player.private_knowledge[index]:
+                sys.exit("Error: Player beleives a card in their hand is impossible")
+                # TODO: Find the bug that causes this error on turn 18 of game 18.
 
         #print "player %d's turn" % current_player.number
         current_player.take_turn()
@@ -364,6 +368,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
 
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
+            turn += 1
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
             if len(game.deck) <= 0:
                 game.last_turn += 1
@@ -372,7 +377,7 @@ for i in xrange(0, NUMBER_OF_GAMES):
 
     color_scores = [len(card_list) for card_list in game.table.values()]
     final_score = sum(color_scores)
-    print "Final Table:"
+    print "Game %i's Final Table:" % game_number
     pprint(game.table)
     print "Game Score: %d" % final_score
     print ""
