@@ -189,16 +189,15 @@ class Player:
         self.hand_age.remove(index)
         drawn_card = None
 
+        self.remove_from_public_knowledge(lost)
+        self.remove_from_private_knowledge(lost)
+
         if len(game.deck) > 0:
             drawn_card = game.deck.pop()
             self.hand[index] = drawn_card
             self.hand_age.append(index)
         else:
             self.hand[index] = None
-
-        # These lines seem to be causing the mistaken knowledge bug
-        self.remove_from_public_knowledge(lost)
-        self.remove_from_private_knowledge(lost)
 
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
@@ -234,7 +233,7 @@ class Player:
         game.mark_turn_taken()
         discarded = self.lose_card(index)
 
-        #print "Discarding %r" % discarded
+        #print "Discarded %r" % discarded
 
         game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
         game.graveyard.append(discarded)
@@ -321,7 +320,7 @@ class Player:
         return players_after_next
 
     def init_knowledge(self):
-        self.public_knowledge = [game.build_deck()] * HAND_SIZE
+        self.public_knowledge = [game.build_deck() for _ in xrange(0, HAND_SIZE)]
 
         private_deck = game.build_deck()
         other_players = [player for player in game.players if player is not self]
@@ -355,18 +354,10 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
     # Take turns loop
     while not game.game_over:
 
-        print "Starting turn %d of %d" % (turn, game_number)
+        #print "Starting turn %d of %d" % (turn, game_number)
 
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
-
-        # Validates every player's public and private knowledge.
-        for player in game.players:
-            for index, card in enumerate(player.hand):
-                if card:
-                    if card not in player.public_knowledge[index] or card not in player.private_knowledge[index]:
-                        sys.exit("Error: Player believes a card in their hand is impossible")
-                        # TODO: Find the bug that causes this error on turn 18 of game 18.
 
         #print "player %d's turn" % current_player.number
         current_player.take_turn()
@@ -377,12 +368,20 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
 
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
-            turn +=1
+            turn += 1
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
             if len(game.deck) <= 0:
                 game.last_turn += 1
         else:
             game.game_over = True
+
+        # Validates every player's public and private knowledge.
+        for player in game.players:
+            for index, card in enumerate(player.hand):
+                if card:
+                    if card not in player.public_knowledge[index] or card not in player.private_knowledge[index]:
+                        sys.exit("Error: Player %d believes a card in his hand (%r at %d) is impossible" % (player.number, card, index))
+                        # TODO: Find the bug that causes this error on turn 18 of game 18.
 
     color_scores = [len(card_list) for card_list in game.table.values()]
     final_score = sum(color_scores)
