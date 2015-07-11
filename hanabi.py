@@ -196,12 +196,15 @@ class Player:
         else:
             self.hand[index] = None
 
+        # These lines seem to be causing the mistaken knowledge bug
         self.remove_from_public_knowledge(lost)
         self.remove_from_private_knowledge(lost)
 
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
         self.private_knowledge[index] = [card for card in game.unseen_cards]
+
+        #TODO: Your private knowledge about the drawn card should account for other players' hands
 
         # other players see the card you just grabbed and update their private knowledge
         if drawn_card:
@@ -254,7 +257,7 @@ class Player:
                 setattr(self.knowledge[index], clue_type, clue)
                 matches.append(index)
 
-        if matches == []:
+        if len(matches) == 0:
             sys.exit("Error: It's illegal to give a clue that the receiving player has zero of something")
 
         for i in xrange(0, HAND_SIZE):
@@ -352,14 +355,18 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
     # Take turns loop
     while not game.game_over:
 
+        print "Starting turn %d of %d" % (turn, game_number)
+
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
 
-        # Validates the player's public and private knowledge.
-        for index, card in enumerate(current_player.hand):
-            if card not in current_player.public_knowledge[index] or card not in current_player.private_knowledge[index]:
-                sys.exit("Error: Player beleives a card in their hand is impossible")
-                # TODO: Find the bug that causes this error on turn 18 of game 18.
+        # Validates every player's public and private knowledge.
+        for player in game.players:
+            for index, card in enumerate(player.hand):
+                if card:
+                    if card not in player.public_knowledge[index] or card not in player.private_knowledge[index]:
+                        sys.exit("Error: Player believes a card in their hand is impossible")
+                        # TODO: Find the bug that causes this error on turn 18 of game 18.
 
         #print "player %d's turn" % current_player.number
         current_player.take_turn()
@@ -370,7 +377,7 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
 
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
-            turn += 1
+            turn +=1
             game.whose_turn = (game.whose_turn + 1) % NUM_PLAYERS
             if len(game.deck) <= 0:
                 game.last_turn += 1
