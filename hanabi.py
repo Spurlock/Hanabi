@@ -41,18 +41,6 @@ class Game:
                 player.hand_age[i] = i
             #print player.hand
 
-        # Supply initial knowledge
-        for player in self.players:
-            player.public_knowledge = [self.build_deck()] * HAND_SIZE
-
-            private_deck = self.build_deck()
-            other_players = [players for players in self.players if players is not player]
-            for other_player in other_players:
-                for card in other_player.hand:
-                    private_deck.remove(card)
-
-            player.private_knowledge = [list(private_deck) for _ in xrange(0, HAND_SIZE)]
-
     def build_deck(self):
         deck = []
         for color in COLORS:
@@ -329,6 +317,17 @@ class Player:
             number = (number + 1) % NUM_PLAYERS
         return players_after_next
 
+    def init_knowledge(self):
+        self.public_knowledge = [game.build_deck()] * HAND_SIZE
+
+        private_deck = game.build_deck()
+        other_players = [player for player in game.players if player is not self]
+        for player in other_players:
+            for card in player.hand:
+                private_deck.remove(card)
+
+        self.private_knowledge = [list(private_deck) for _ in xrange(0, HAND_SIZE)]
+
     def remove_from_private_knowledge(self, card):
         for card_list in self.private_knowledge:
             if card in card_list:
@@ -346,6 +345,9 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
     # Start a game
     game = Game()
     turn = 1
+
+    for player in game.players:
+        player.init_knowledge()
 
     # Take turns loop
     while not game.game_over:
