@@ -119,6 +119,7 @@ class Player:
         self.private_knowledge = []  # What I know
         self.public_knowledge = []  # What everyone knows I know
         self.number = number
+        self.infered_playables = [None] * HAND_SIZE # [Blue 2, Green 2]
 
     def take_turn(self):
 
@@ -127,6 +128,8 @@ class Player:
         if len(my_playable_cards) > 0:
             self.play_card(my_playable_cards[0])
             return
+
+        # TODO: play infered playables. 
 
         # If clues remain and next player has a playable card, gives clue about the card
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
@@ -202,6 +205,7 @@ class Player:
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
         self.private_knowledge[index] = [card for card in game.unseen_cards]
+        #TODO: Remove infered at index
 
         #TODO: Your private knowledge about the drawn card should account for other players' hands
 
@@ -225,6 +229,8 @@ class Player:
             game.table[played.color].append(played)
             if played.number == 5:
                 game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
+
+            #TODO: Remove inference that has a card that matches played card
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
@@ -258,6 +264,10 @@ class Player:
 
         if len(matches) == 0:
             sys.exit("Error: It's illegal to give a clue that the receiving player has zero of something")
+
+        # TODO: add inference; why was I given this clue.
+        # TODO: if match applys to only one card, infer it to be playable.
+        # TODO: the inference list is the priv_knowledge list fitered to only playable cards
 
         for i in xrange(0, HAND_SIZE):
             if i in matches:
