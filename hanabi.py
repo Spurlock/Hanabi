@@ -205,7 +205,7 @@ class Player:
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
         self.private_knowledge[index] = [card for card in game.unseen_cards]
-        #TODO: Remove infered at index
+        self.infered_playables[index] = None
 
         #TODO: Your private knowledge about the drawn card should account for other players' hands
 
@@ -265,10 +265,6 @@ class Player:
         if len(matches) == 0:
             sys.exit("Error: It's illegal to give a clue that the receiving player has zero of something")
 
-        # TODO: add inference; why was I given this clue.
-        # TODO: if match applys to only one card, infer it to be playable.
-        # TODO: the inference list is the priv_knowledge list fitered to only playable cards
-
         for i in xrange(0, HAND_SIZE):
             if i in matches:
                 self.public_knowledge[i] = [card for card in self.public_knowledge[i] if getattr(card, clue_type) == clue]
@@ -276,6 +272,15 @@ class Player:
             else:
                 self.public_knowledge[i] = [card for card in self.public_knowledge[i] if getattr(card, clue_type) != clue]
                 self.private_knowledge[i] = [card for card in self.private_knowledge[i] if getattr(card, clue_type) != clue]
+
+        # When a clue only matches one card, a list of playable cards from the
+        # private knowledge index of that card is added to that index of infered playables
+        if len(matches) == 1:
+            self.infered_playables[matches[0]] = []
+            for possible_card in self.private_knowledge[matches[0]]:
+                for playable_card in game.get_playable_cards():
+                    if possible_card == playable_card:
+                        self.infered_playables[matches[0]].append(possible_card)
 
     def get_cards_in_list(self, player, card_list):
         if player is self:
