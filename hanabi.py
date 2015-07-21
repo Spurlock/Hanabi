@@ -230,7 +230,14 @@ class Player:
             if played.number == 5:
                 game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
 
-            #TODO: Remove inference that has a card that matches played card
+            #Removes inference that has a card that matches played card
+            for player in game.players:
+                for index, card_list in enumerate(player.infered_playables):
+                    if card_list is not None:
+                        for card in card_list:
+                            if card == played:
+                                player.infered_playables[index] = None
+                                return
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
