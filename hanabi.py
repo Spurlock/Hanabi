@@ -134,8 +134,6 @@ class Player:
             if card_list is not None:
                 self.play_card(index)
                 return
-            else:
-                pass
 
         # If clues remain and next player has a playable card, gives clue about the card
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
@@ -239,11 +237,9 @@ class Player:
             #Removes inference that has a card that matches played card
             for player in game.players:
                 for index, card_list in enumerate(player.infered_playables):
-                    if card_list is not None:
-                        for card in card_list:
-                            if card == played:
-                                player.infered_playables[index] = None
-                                return
+                    if card_list is not None and played in card_list:
+                        player.infered_playables[index] = None
+                        break
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
@@ -291,10 +287,10 @@ class Player:
         # private knowledge index of that card is added to that index of infered playables
         if len(matches) == 1:
             self.infered_playables[matches[0]] = []
+            playable_cards = game.get_playable_cards()
             for possible_card in self.private_knowledge[matches[0]]:
-                for playable_card in game.get_playable_cards():
-                    if possible_card == playable_card:
-                        self.infered_playables[matches[0]].append(possible_card)
+                if possible_card in playable_cards:
+                    self.infered_playables[matches[0]].append(possible_card)
 
     def get_cards_in_list(self, player, card_list):
         if player is self:
