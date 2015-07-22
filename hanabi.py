@@ -12,9 +12,9 @@ NUMBER_OF_GAMES = 50
 final_scores = []
 
 # Current 50 Game Scores:
-# Best: 20
-# Worst: 14
-# Average: 17.06000
+# Best: 21
+# Worst: 16
+# Average: 18.88000
 
 
 class Game:
@@ -129,7 +129,13 @@ class Player:
             self.play_card(my_playable_cards[0])
             return
 
-        # TODO: play infered playables. 
+        #plays infered playables.
+        for index, card_list in enumerate(self.infered_playables):
+            if card_list is not None:
+                self.play_card(index)
+                return
+            else:
+                pass
 
         # If clues remain and next player has a playable card, gives clue about the card
         next_player = game.players[(self.number + 1) % NUM_PLAYERS]
@@ -241,6 +247,7 @@ class Player:
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
+            print "FUSE BURNED!!!!!!!!!!!!!"
 
     def discard(self, index):
         game.mark_turn_taken()
