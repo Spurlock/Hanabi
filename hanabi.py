@@ -119,7 +119,7 @@ class Player:
         self.private_knowledge = []  # What I know
         self.public_knowledge = []  # What everyone knows I know
         self.number = number
-        self.infered_playables = [None] * HAND_SIZE # [Blue 2, Green 2]
+        self.inferred_playables = [None] * HAND_SIZE # [Blue 2, Green 2]
 
     def take_turn(self):
 
@@ -129,8 +129,8 @@ class Player:
             self.play_card(my_playable_cards[0])
             return
 
-        #plays infered playables.
-        for index, card_list in enumerate(self.infered_playables):
+        #plays inferred playables.
+        for index, card_list in enumerate(self.inferred_playables):
             if card_list is not None:
                 self.play_card(index)
                 return
@@ -216,7 +216,7 @@ class Player:
                     if card is not None:
                         self.private_knowledge[index].remove(card)
 
-        self.infered_playables[index] = None
+        self.inferred_playables[index] = None
 
         # other players see the card you just grabbed and update their private knowledge
         if drawn_card:
@@ -241,9 +241,9 @@ class Player:
 
             #Removes inference that has a card that matches played card
             for player in game.players:
-                for index, card_list in enumerate(player.infered_playables):
+                for index, card_list in enumerate(player.inferred_playables):
                     if card_list is not None and played in card_list:
-                        player.infered_playables[index] = None
+                        player.inferred_playables[index] = None
                         break
         else:
             game.graveyard.append(played)
@@ -289,13 +289,13 @@ class Player:
                 self.private_knowledge[i] = [card for card in self.private_knowledge[i] if getattr(card, clue_type) != clue]
 
         # When a clue only matches one card, a list of playable cards from the
-        # private knowledge index of that card is added to that index of infered playables
+        # private knowledge index of that card is added to that index of inferred playables
         if len(matches) == 1:
-            self.infered_playables[matches[0]] = []
+            self.inferred_playables[matches[0]] = []
             playable_cards = game.get_playable_cards()
             for possible_card in self.private_knowledge[matches[0]]:
                 if possible_card in playable_cards:
-                    self.infered_playables[matches[0]].append(possible_card)
+                    self.inferred_playables[matches[0]].append(possible_card)
 
     def get_cards_in_list(self, player, card_list):
         if player is self:
