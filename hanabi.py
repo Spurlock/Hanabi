@@ -129,32 +129,20 @@ class Player:
             self.play_card(my_playable_cards[0])
             return
 
-        #plays inferred playables.
+        # Play inferred playables
         for index, card_list in enumerate(self.inferred_playables):
             if card_list is not None:
                 self.play_card(index)
                 return
 
         # If clues remain and next player has a playable card, gives clue about the card
-        next_player = game.players[(self.number + 1) % NUM_PLAYERS]
-        next_player_playable_cards = self.get_playable_cards_for_player(next_player)
-        players_after_next = self.get_players_after_next()
+        next_players = self.get_next_players()
 
         if game.remaining_clues > 0:
             clue_up = None
-            if len(next_player_playable_cards) > 0 and len(self.get_known_playable_cards(next_player)) == 0:
-                for playable_card_index in next_player_playable_cards:
-                    card_knowledge = next_player.knowledge[playable_card_index]
-                    if card_knowledge.number is None:
-                        clue_up = next_player.hand[playable_card_index].number
-                    elif card_knowledge.color is None:
-                        clue_up = next_player.hand[playable_card_index].color
-                if clue_up is not None:
-                    self.give_clue(clue_up, next_player)
-                    return
 
             # If the next player already knows they have a playable card, gives clue to the player after them
-            for player in players_after_next:
+            for player in next_players:
                 if len(self.get_playable_cards_for_player(player)) > 0 and len(self.get_known_playable_cards(player)) == 0:
                     for playable_card_index in self.get_playable_cards_for_player(player):
                         card_knowledge = player.knowledge[playable_card_index]
@@ -209,20 +197,20 @@ class Player:
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
         self.private_knowledge[index] = [card for card in game.unseen_cards]
+
+        other_players = self.get_next_players()
         # private knowledge about the drawn card accounts for other players' hands
-        for player in game.players:
-            if player is not self:
-                for card in player.hand:
-                    if card is not None:
-                        self.private_knowledge[index].remove(card)
+        for player in other_players:
+            for card in player.hand:
+                if card is not None:
+                    self.private_knowledge[index].remove(card)
 
         self.inferred_playables[index] = None
 
         # other players see the card you just grabbed and update their private knowledge
         if drawn_card:
-            for player in game.players:
-                if player is not self:
-                    player.remove_from_private_knowledge(drawn_card)
+            for player in other_players:
+                player.remove_from_private_knowledge(drawn_card)
         return lost
 
     def play_card(self, index):
@@ -341,20 +329,19 @@ class Player:
         return self.get_known_cards_in_list(player, reserved_cards)
 
     # returns players in order of turn after next player, up to the current player
-    def get_players_after_next(self):
-        players_after_next = []
-        number = (self.number + 2) % NUM_PLAYERS
-        for i in xrange(0, NUM_PLAYERS - 2):
-            players_after_next.append(game.players[number])
+    def get_next_players(self):
+        next_players = []
+        number = (self.number + 1) % NUM_PLAYERS
+        for _ in xrange(0, NUM_PLAYERS - 1):
+            next_players.append(game.players[number])
             number = (number + 1) % NUM_PLAYERS
-        return players_after_next
+        return next_players
 
     def init_knowledge(self):
         self.public_knowledge = [game.build_deck() for _ in xrange(0, HAND_SIZE)]
 
         private_deck = game.build_deck()
-        other_players = [player for player in game.players if player is not self]
-        for player in other_players:
+        for player in self.get_next_players():
             for card in player.hand:
                 private_deck.remove(card)
 
