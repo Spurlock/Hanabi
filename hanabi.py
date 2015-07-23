@@ -12,9 +12,9 @@ NUMBER_OF_GAMES = 50
 final_scores = []
 
 # Current 50 Game Scores:
-# Best: 21
+# Best: 22
 # Worst: 16
-# Average: 18.88000
+# Average: 19.32000
 
 
 class Game:
@@ -209,9 +209,14 @@ class Player:
         self.knowledge[index] = Card(None, None)
         self.public_knowledge[index] = [card for card in game.unseen_cards]
         self.private_knowledge[index] = [card for card in game.unseen_cards]
-        self.infered_playables[index] = None
+        # private knowledge about the drawn card accounts for other players' hands
+        for player in game.players:
+            if player is not self:
+                for card in player.hand:
+                    if card is not None:
+                        self.private_knowledge[index].remove(card)
 
-        #TODO: Your private knowledge about the drawn card should account for other players' hands
+        self.infered_playables[index] = None
 
         # other players see the card you just grabbed and update their private knowledge
         if drawn_card:
@@ -406,7 +411,6 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
                 if card:
                     if card not in player.public_knowledge[index] or card not in player.private_knowledge[index]:
                         sys.exit("Error: Player %d believes a card in his hand (%r at %d) is impossible" % (player.number, card, index))
-                        # TODO: Find the bug that causes this error on turn 18 of game 18.
 
     color_scores = [len(card_list) for card_list in game.table.values()]
     final_score = sum(color_scores)
