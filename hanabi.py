@@ -15,9 +15,9 @@ burned_fuses = 0
 in_game_prints = False
 
 # Current 50 Game Scores:
-# Best: 22
+# Best: 23
 # Worst: 16
-# Average: 19.32000
+# Average: 19.400000
 
 
 class Game:
