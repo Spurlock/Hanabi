@@ -10,6 +10,8 @@ CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
 final_scores = []
+discarded_reserves = 0
+burned_fuses = 0
 
 # Current 50 Game Scores:
 # Best: 22
@@ -131,19 +133,19 @@ class Player:
 
         # Play inferred playables
         for index, card_list in enumerate(self.inferred_playables):
-            if card_list is not None:
+            if card_list:
                 self.play_card(index)
                 return
 
-        # If clues remain and next player has a playable card, gives clue about the card
+        # If we can give a clue, do so to the first player that needs help
         next_players = self.get_next_players()
-
         if game.remaining_clues > 0:
-            clue_up = None
 
-            # If the next player already knows they have a playable card, gives clue to the player after them
-            for player in next_players:
-                if len(self.get_playable_cards_for_player(player)) > 0 and len(self.get_known_playable_cards(player)) == 0:
+            for player_index, player in enumerate(next_players):
+                if len(self.get_known_playable_cards(player)) == 0 and len(self.get_playable_cards_for_player(player)) > 0:
+                    clue_up = None
+
+                    # Tell him about his playable card(s)!
                     for playable_card_index in self.get_playable_cards_for_player(player):
                         card_knowledge = player.knowledge[playable_card_index]
                         if card_knowledge.number is None:
@@ -154,29 +156,58 @@ class Player:
                         self.give_clue(clue_up, player)
                         return
 
-        #useless_cards = game.get_useless_cards()
-        my_useless_cards = self.get_known_useless_cards(self)
-        #reserved_cards = game.get_reserved_cards()
-        my_reserved_cards = self.get_known_reserved_cards(self)
+                if len(self.get_known_useless_cards(player)) == 0 and len(self.get_useless_cards_for_player(player)) > 0:
+                    # If player is about to discard a reserved card, stop him
+                    reserved_cards = game.get_reserved_cards()
+                    next_discard = player.hand[self.get_best_discard(player)]
+                    if next_discard in reserved_cards:
+
+                        # First, see if we can safely communicate where some reserved cards are
+                        if self.count_clue_matches(next_discard.number, player) > 1:
+                            self.give_clue(next_discard.number, player)
+                            return
+                        if self.count_clue_matches(next_discard.color, player) > 1:
+                            self.give_clue(next_discard.color, player)
+                            return
+
+                        # If not, try to point out some safe discards
+                        # TODO: if there are multiple ways to do this, pick the one with the most matches
+                        for useless_card_index in self.get_useless_cards_for_player(player):
+                            # Check whether we can safely communicate where some useless cards are
+                            useless_card = player.hand[useless_card_index]
+                            useless_of_number = [card for card in game.get_useless_cards() if card.number == useless_card.number]
+                            if len(useless_of_number) == len(COLORS):
+                                self.give_clue(useless_card.number, player)
+                                return
+                            if len(game.table[useless_card.color]) == 5:
+                                self.give_clue(useless_card.color, player)
+                                return
                 
         if not game.turn_taken:
-            if len(my_useless_cards) > 0:
-                self.discard(my_useless_cards[0])
-            else:
-                discardables = [index for index, card in enumerate(self.knowledge) if card.color is None and card.number is None]
-                if len(discardables) < 1:
-                    discardables = [index for index, card in enumerate(self.knowledge) if card.color is None or card.number is None]
-                if len(discardables) < 1:
-                    discardables = [index for index, card in enumerate(self.knowledge) if index not in my_reserved_cards]
+            self.discard(self.get_best_discard(self))
 
-                for age in self.hand_age:
-                    if age in discardables:
-                        self.discard(age)
-                        return
+    def count_clue_matches(self, clue, player):
+        clue_type = 'number' if type(clue) == int else 'color'
+        matches = [card for card in player.hand if card and getattr(card, clue_type) == clue]
+        return len(matches)
 
-        if not game.turn_taken:
-            print "*** WARNING! Using stupid discard! ***"
-            self.discard(0)
+    def get_best_discard(self, player):
+        player_useless_cards = self.get_known_useless_cards(player)
+        player_reserved_cards = self.get_known_reserved_cards(player)
+
+        if len(player_useless_cards) > 0:
+            return player_useless_cards[0]
+        else:
+            discardables = [index for index, card in enumerate(player.knowledge) if card.color is None and card.number is None]
+            if len(discardables) < 1:
+                discardables = [index for index, card in enumerate(player.knowledge) if card.color is None or card.number is None]
+            if len(discardables) < 1:
+                discardables = [index for index, card in enumerate(player.knowledge) if index not in player_reserved_cards]
+
+            for hand_index in player.hand_age:
+                if hand_index in discardables:
+                    return hand_index
+        return player.hand_age[0]
 
     def lose_card(self, index):
         lost = self.hand[index]
@@ -233,16 +264,23 @@ class Player:
                     if card_list is not None and played in card_list:
                         player.inferred_playables[index] = None
                         break
+
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
-            print "FUSE BURNED!!!!!!!!!!!!!"
+            #print "FUSE BURNED!!!!!!!!!!!!!"
+            global burned_fuses
+            burned_fuses += 1
 
     def discard(self, index):
         game.mark_turn_taken()
         discarded = self.lose_card(index)
 
         #print "Discarded %r" % discarded
+        if discarded in game.get_reserved_cards():
+            # print "SHIT! WE DISCARDED A RESERVED CARD. %r" % discarded
+            global discarded_reserves
+            discarded_reserves += 1
 
         game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
         game.graveyard.append(discarded)
@@ -279,11 +317,15 @@ class Player:
         # When a clue only matches one card, a list of playable cards from the
         # private knowledge index of that card is added to that index of inferred playables
         if len(matches) == 1:
-            self.inferred_playables[matches[0]] = []
+            match_index = matches[0]
+            inferred_playables = []
             playable_cards = game.get_playable_cards()
-            for possible_card in self.private_knowledge[matches[0]]:
+            for possible_card in self.private_knowledge[match_index]:
                 if possible_card in playable_cards:
-                    self.inferred_playables[matches[0]].append(possible_card)
+                    inferred_playables.append(possible_card)
+
+            if len(inferred_playables) > 0:
+                self.inferred_playables[match_index] = inferred_playables
 
     def get_cards_in_list(self, player, card_list):
         if player is self:
@@ -417,3 +459,5 @@ print "*****"
 print "Best Score: %i" % best_score
 print "Worst Score: %i" % worst_score
 print "Average Score: %f" % average_score
+print "Avereage number of reserved cards discarded: %f" % (discarded_reserves / NUMBER_OF_GAMES)
+print "Average number of fuses burned: %f" % (burned_fuses / NUMBER_OF_GAMES)
