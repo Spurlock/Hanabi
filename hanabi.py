@@ -15,9 +15,9 @@ burned_fuses = 0
 in_game_prints = False
 
 # Current 50 Game Scores:
-# Best: 23
+# Best: 22
 # Worst: 16
-# Average: 19.400000
+# Average: 19.440000
 
 
 class Game:
@@ -140,10 +140,11 @@ class Player:
                 return
 
         # If we can give a clue, do so to the first player that needs help
-        next_players = self.get_next_players()
         if game.remaining_clues > 0:
+            next_players = self.get_next_players()
 
             for player_index, player in enumerate(next_players):
+                # Does this guy have playable cards and not know it?
                 if len(self.get_known_playable_cards(player)) == 0 and len(self.get_playable_cards_for_player(player)) > 0:
                     clue_up = None
 
@@ -158,32 +159,31 @@ class Player:
                         self.give_clue(clue_up, player)
                         return
 
-                if len(self.get_known_useless_cards(player)) == 0 and len(self.get_useless_cards_for_player(player)) > 0:
-                    # If player is about to discard a reserved card, stop him
-                    reserved_cards = game.get_reserved_cards()
-                    next_discard = player.hand[self.get_best_discard(player)]
-                    if next_discard in reserved_cards:
+                # If player is about to discard a reserved card, stop him
+                reserved_cards = game.get_reserved_cards()
+                next_discard = player.hand[self.get_best_discard(player)]
+                if next_discard in reserved_cards and game.remaining_clues < NUM_PLAYERS:
 
-                        # First, see if we can safely communicate where some reserved cards are
-                        if self.count_clue_matches(next_discard.number, player) > 1:
-                            self.give_clue(next_discard.number, player)
-                            return
-                        if self.count_clue_matches(next_discard.color, player) > 1:
-                            self.give_clue(next_discard.color, player)
-                            return
+                    # First, see if we can safely communicate where some reserved cards are
+                    if self.count_clue_matches(next_discard.number, player) > 1:
+                        self.give_clue(next_discard.number, player)
+                        return
+                    if self.count_clue_matches(next_discard.color, player) > 1:
+                        self.give_clue(next_discard.color, player)
+                        return
 
-                        # If not, try to point out some safe discards
-                        # TODO: if there are multiple ways to do this, pick the one with the most matches
-                        for useless_card_index in self.get_useless_cards_for_player(player):
-                            # Check whether we can safely communicate where some useless cards are
-                            useless_card = player.hand[useless_card_index]
-                            useless_of_number = [card for card in game.get_useless_cards() if card.number == useless_card.number]
-                            if len(useless_of_number) == len(COLORS):
-                                self.give_clue(useless_card.number, player)
-                                return
-                            if len(game.table[useless_card.color]) == 5:
-                                self.give_clue(useless_card.color, player)
-                                return
+                    # If not, try to point out some safe discards
+                    # TODO: if there are multiple ways to do this, pick the one with the most matches
+                    for useless_card_index in self.get_useless_cards_for_player(player):
+                        # Check whether we can safely communicate where some useless cards are
+                        useless_card = player.hand[useless_card_index]
+                        useless_of_number = [card for card in game.get_useless_cards() if card.number == useless_card.number]
+                        if len(useless_of_number) == len(COLORS):
+                            self.give_clue(useless_card.number, player)
+                            return
+                        if len(game.table[useless_card.color]) == 5:
+                            self.give_clue(useless_card.color, player)
+                            return
                 
         if not game.turn_taken:
             self.discard(self.get_best_discard(self))
@@ -287,6 +287,8 @@ class Player:
             print "Player %d discards a %r" % (current_player.number, discarded)
             if discarded in game.get_reserved_cards():
                 print "Discarded an irreplacable card!!!"
+                global discarded_reserves
+                discarded_reserves += 1
             if self.hand[index] is not None:
                 print "Player %d draws a %r" % (current_player.number, self.hand[index])
             else:
@@ -352,9 +354,9 @@ class Player:
         player_card_matches = []
         knowledge = player.private_knowledge if player is self else player.public_knowledge
         for index, possibilities in enumerate(knowledge):
-                hits = [True for possible_card in possibilities if possible_card in card_list]
-                if len(hits) == len(possibilities):
-                    player_card_matches.append(index)
+            hits = [True for possible_card in possibilities if possible_card in card_list]
+            if len(hits) == len(possibilities) and player.hand[index] is not None:
+                player_card_matches.append(index)
         return player_card_matches
 
     def get_playable_cards_for_player(self, player):
