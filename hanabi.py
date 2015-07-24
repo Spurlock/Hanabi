@@ -10,6 +10,7 @@ CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
 final_scores = []
+in_game_prints = False
 
 # Current 50 Game Scores:
 # Best: 22
@@ -39,7 +40,8 @@ class Game:
             for i in xrange(0, HAND_SIZE):
                 player.hand[i] = self.deck.pop()
                 player.hand_age[i] = i
-            #print player.hand
+            if in_game_prints is True:
+                print "player %d's hand: %s" % (player.number, player.hand)
 
     def build_deck(self):
         deck = []
@@ -138,6 +140,7 @@ class Player:
         # If clues remain and next player has a playable card, gives clue about the card
         next_players = self.get_next_players()
 
+        #TODO: give clues to keep players from discarding reserved cards
         if game.remaining_clues > 0:
             clue_up = None
 
@@ -220,7 +223,12 @@ class Player:
 
         played = self.lose_card(index)
 
-        #print "Playing %r" % played
+        if in_game_prints is True:
+            print "Player %d plays a %r" % (current_player.number, played)
+            if self.hand[index] is not None:
+                print "Player %d draws a %r" % (current_player.number, self.hand[index])
+            else:
+                print "The deck is empty"
 
         if played in game.get_playable_cards():
             game.table[played.color].append(played)
@@ -242,7 +250,14 @@ class Player:
         game.mark_turn_taken()
         discarded = self.lose_card(index)
 
-        #print "Discarded %r" % discarded
+        if in_game_prints is True:
+            print "Player %d discards a %r" % (current_player.number, discarded)
+            if discarded in game.get_reserved_cards():
+                print "Discarded an irreplacable card!!!"
+            if self.hand[index] is not None:
+                print "Player %d draws a %r" % (current_player.number, self.hand[index])
+            else:
+                print "The deck is empty"
 
         game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
         game.graveyard.append(discarded)
@@ -252,9 +267,10 @@ class Player:
         if receiving_player is self:
             sys.exit("Error: Can't give yourself a clue")
 
-        #print "Giving Player %d a clue about %ss" % (receiving_player.number, clue)
         receiving_player.receive_clue(clue)
-        #print receiving_player.knowledge
+
+        if in_game_prints is True:
+            print "Player %d gives Player %d a clue about %ss" % (current_player.number, receiving_player.number, clue)
 
     def receive_clue(self, clue):
         game.remaining_clues -= 1
@@ -361,6 +377,12 @@ class Player:
 random.seed(0)
 
 for game_number in xrange(0, NUMBER_OF_GAMES):
+    #TODO: study worst game (number 9) for strategy ideas
+    #if game_number == 9:
+        #in_game_prints = True
+    #else:
+        #in_game_prints = False
+    
     # Start a game
     game = Game()
     turn = 1
@@ -371,17 +393,27 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
     # Take turns loop
     while not game.game_over:
 
-        #print "Starting turn %d of %d" % (turn, game_number)
+        if in_game_prints is True:
+            print "*****"
+            print "Starting turn %d of game %d" % (turn, game_number)
 
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
 
-        #print "player %d's turn" % current_player.number
+        if in_game_prints is True:
+            print "Player %d's turn" % current_player.number
+            
         current_player.take_turn()
         if not game.turn_taken:
             sys.exit("Player failed to take an action!")
 
-        #pprint(game.table)
+        if in_game_prints is True:
+            print "Game Table:"
+            pprint(game.table)
+            for player in game.players:
+                print "player %d's hand: %s" % (player.number, player.hand)
+                print "Player %d knows: %s" % (player.number, player.knowledge)
+            print "Clues remaining: %d" % game.remaining_clues
 
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
