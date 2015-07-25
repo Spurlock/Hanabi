@@ -17,7 +17,7 @@ in_game_prints = False
 # Current 50 Game Scores:
 # Best: 22
 # Worst: 16
-# Average: 19.440000
+# Average: 19.520000
 
 
 class Game:
@@ -146,17 +146,21 @@ class Player:
             for player_index, player in enumerate(next_players):
                 # Does this guy have playable cards and not know it?
                 if len(self.get_known_playable_cards(player)) == 0 and len(self.get_playable_cards_for_player(player)) > 0:
-                    clue_up = None
+                    possible_clues = []
 
                     # Tell him about his playable card(s)!
                     for playable_card_index in self.get_playable_cards_for_player(player):
                         card_knowledge = player.knowledge[playable_card_index]
                         if card_knowledge.number is None:
-                            clue_up = player.hand[playable_card_index].number
+                            possible_clues.append(player.hand[playable_card_index].number)
                         elif card_knowledge.color is None:
-                            clue_up = player.hand[playable_card_index].color
-                    if clue_up is not None:
-                        self.give_clue(clue_up, player)
+                            possible_clues.append(player.hand[playable_card_index].color)
+
+                    if len(possible_clues) > 0:
+                        if 5 in possible_clues:
+                            self.give_clue(5, player)
+                        else:
+                            self.give_clue(possible_clues[-1], player)  # for some reason (probably random), giving the last clue is better
                         return
 
                 # If player is about to discard a reserved card, stop him
