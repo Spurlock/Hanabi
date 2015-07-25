@@ -15,9 +15,9 @@ burned_fuses = 0
 in_game_prints = False
 
 # Current 50 Game Scores:
-# Best: 22
-# Worst: 16
-# Average: 19.520000
+# Best: 23
+# Worst: 17
+# Average: 19.820000
 
 
 class Game:
@@ -137,6 +137,14 @@ class Player:
         for index, card_list in enumerate(self.inferred_playables):
             if card_list:
                 self.play_card(index)
+                return
+
+        # If it's the last turn, try and play your playable cards.
+        if game.last_turn > 0 and game.remaining_fuses > 1:
+            playable_probabilities = self.get_known_playable_cards(self, True)
+            best_chance = max(playable_probabilities)
+            if best_chance > 0:
+                self.play_card(playable_probabilities.index(best_chance))
                 return
 
         # If we can give a clue, do so to the first player that needs help
@@ -354,12 +362,14 @@ class Player:
                 player_card_matches.append(index)
         return player_card_matches
 
-    def get_known_cards_in_list(self, player, card_list):
+    def get_known_cards_in_list(self, player, card_list, get_probabilities=False):
         player_card_matches = []
         knowledge = player.private_knowledge if player is self else player.public_knowledge
         for index, possibilities in enumerate(knowledge):
             hits = [True for possible_card in possibilities if possible_card in card_list]
-            if len(hits) == len(possibilities) and player.hand[index] is not None:
+            if get_probabilities:
+                player_card_matches.append(len(hits) / len(possibilities))
+            elif len(hits) == len(possibilities) and player.hand[index] is not None:
                 player_card_matches.append(index)
         return player_card_matches
 
@@ -375,17 +385,17 @@ class Player:
         reserved_cards = game.get_reserved_cards()
         return self.get_cards_in_list(player, reserved_cards)
 
-    def get_known_playable_cards(self, player):
+    def get_known_playable_cards(self, player, get_probabilites=False):
         playable_cards = game.get_playable_cards()
-        return self.get_known_cards_in_list(player, playable_cards)
+        return self.get_known_cards_in_list(player, playable_cards, get_probabilites)
 
-    def get_known_useless_cards(self, player):
+    def get_known_useless_cards(self, player, get_probabilites=False):
         useless_cards = game.get_useless_cards()
-        return self.get_known_cards_in_list(player, useless_cards)
+        return self.get_known_cards_in_list(player, useless_cards, get_probabilites)
 
-    def get_known_reserved_cards(self, player):
+    def get_known_reserved_cards(self, player, get_probabilites=False):
         reserved_cards = game.get_reserved_cards()
-        return self.get_known_cards_in_list(player, reserved_cards)
+        return self.get_known_cards_in_list(player, reserved_cards, get_probabilites)
 
     # returns players in order of turn after next player, up to the current player
     def get_next_players(self):
