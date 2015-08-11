@@ -13,6 +13,7 @@ final_scores = []
 discarded_reserves = 0
 burned_fuses = 0
 in_game_prints = False
+#TODO: in game prints for all actions and thoughts guaged by number for level of importance
 
 # Current 50 Game Scores:
 # Best: 23
@@ -185,17 +186,25 @@ class Player:
                         return
 
                     # If not, try to point out some safe discards
-                    # TODO: if there are multiple ways to do this, pick the one with the most matches
+                    high_match = 0
+                    clue_up = None
                     for useless_card_index in self.get_useless_cards_for_player(player):
                         # Check whether we can safely communicate where some useless cards are
                         useless_card = player.hand[useless_card_index]
                         useless_of_number = [card for card in game.get_useless_cards() if card.number == useless_card.number]
                         if len(useless_of_number) == len(COLORS):
-                            self.give_clue(useless_card.number, player)
-                            return
+                            clue_matches = self.count_clue_matches(useless_card.number, player)
+                            if clue_matches > high_match:
+                                clue_up = useless_card.number
+                                high_match = clue_matches
                         if len(game.table[useless_card.color]) == 5:
-                            self.give_clue(useless_card.color, player)
-                            return
+                            clue_matches = self.count_clue_matches(useless_card.color, player)
+                            if clue_matches > high_match:
+                                clue_up = useless_card.color
+                                high_match = clue_matches
+                    if clue_up is not None:
+                        self.give_clue(clue_up, player)
+                        return
                 
         if not game.turn_taken:
             self.discard(self.get_best_discard(self))
