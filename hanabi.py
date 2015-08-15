@@ -9,11 +9,19 @@ COLORS = ['pink', 'blue', 'white', 'yellow', 'green']
 CARD_COUNTS = {1: 3, 2: 2, 3: 2, 4: 2, 5: 1}
 MAX_CLUES = 8
 NUMBER_OF_GAMES = 50
+NAMES = {
+    'infosec': ['Alice', 'Bob', 'Carol', 'Dave', 'Eve'],
+    'megaman': ['Air Man', 'Bubble Man', 'Crash Man', 'Dust Man', 'Elec Man'],
+    'pokemon': ['Abra', 'Bulbasaur', 'Charmander', 'Diglett', 'Eevee'],
+    'worm':    ['Alexandria', 'Behemoth', 'Coil', 'Dragon', 'Eidolon'],
+    'numbers': ['Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5']
+}['megaman']
+
 final_scores = []
 discarded_reserves = 0
 burned_fuses = 0
 in_game_prints = False
-#TODO: in game prints for all actions and thoughts guaged by number for level of importance
+#TODO: in game prints for all actions and thoughts gauged by number for level of importance
 
 # Current 50 Game Scores:
 # Best: 23
@@ -44,7 +52,7 @@ class Game:
                 player.hand[i] = self.deck.pop()
                 player.hand_age[i] = i
             if in_game_prints is True:
-                print "player %d's hand: %s" % (player.number, player.hand)
+                print "%r's hand: %r" % (player, player.hand)
 
     def build_deck(self):
         deck = []
@@ -125,6 +133,9 @@ class Player:
         self.public_knowledge = []  # What everyone knows I know
         self.number = number
         self.inferred_playables = [None] * HAND_SIZE # [Blue 2, Green 2]
+
+    def __repr__(self):
+        return NAMES[self.number]
 
     def take_turn(self):
 
@@ -275,9 +286,9 @@ class Player:
         played = self.lose_card(index)
 
         if in_game_prints is True:
-            print "Player %d plays a %r" % (current_player.number, played)
+            print "%r plays a %r" % (current_player, played)
             if self.hand[index] is not None:
-                print "Player %d draws a %r" % (current_player.number, self.hand[index])
+                print "%r draws a %r" % (current_player, self.hand[index])
             else:
                 print "The deck is empty"
 
@@ -305,13 +316,13 @@ class Player:
         discarded = self.lose_card(index)
 
         if in_game_prints is True:
-            print "Player %d discards a %r" % (current_player.number, discarded)
+            print "%r discards a %r" % (current_player, discarded)
             if discarded in game.get_reserved_cards():
                 print "Discarded an irreplacable card!!!"
                 global discarded_reserves
                 discarded_reserves += 1
             if self.hand[index] is not None:
-                print "Player %d draws a %r" % (current_player.number, self.hand[index])
+                print "%r draws a %r" % (current_player, self.hand[index])
             else:
                 print "The deck is empty"
 
@@ -326,7 +337,7 @@ class Player:
         receiving_player.receive_clue(clue)
 
         if in_game_prints is True:
-            print "Player %d gives Player %d a clue about %ss" % (current_player.number, receiving_player.number, clue)
+            print "%r gives %r a clue about %ss" % (current_player, receiving_player, clue)
 
     def receive_clue(self, clue):
         game.remaining_clues -= 1
@@ -350,6 +361,9 @@ class Player:
 
         # When a clue only matches one card, a list of playable cards from the
         # private knowledge index of that card is added to that index of inferred playables
+
+        # TODO: be more aggressive about inferring playability. If clue matches multiple cards, maybe assume they're all playable
+        # ALSO TODO: might need to update the clue-giving strategy to match this more optimistic interpretation
         if len(matches) == 1:
             match_index = matches[0]
             inferred_playables = []
@@ -439,12 +453,12 @@ class Player:
 random.seed(0)
 
 for game_number in xrange(0, NUMBER_OF_GAMES):
-    #TODO: study worst game (number 9) for strategy ideas
-    #if game_number == 9:
+    #TODO: study worst game (number 31) for strategy ideas
+    #if game_number == 31:
         #in_game_prints = True
     #else:
         #in_game_prints = False
-    
+
     # Start a game
     game = Game()
     turn = 1
@@ -463,7 +477,7 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
         current_player = game.players[game.whose_turn]
 
         if in_game_prints is True:
-            print "Player %d's turn" % current_player.number
+            print "%r's turn" % current_player
             
         current_player.take_turn()
         if not game.turn_taken:
@@ -473,8 +487,8 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
             print "Game Table:"
             pprint(game.table)
             for player in game.players:
-                print "player %d's hand: %s" % (player.number, player.hand)
-                print "Player %d knows: %s" % (player.number, player.knowledge)
+                print "%r's hand: %s" % (player, player.hand)
+                print "%r knows: %s" % (player, player.knowledge)
             print "Clues remaining: %d" % game.remaining_clues
 
         #if game isn't over, prepare for next turn
@@ -491,7 +505,7 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
             for index, card in enumerate(player.hand):
                 if card:
                     if card not in player.public_knowledge[index] or card not in player.private_knowledge[index]:
-                        sys.exit("Error: Player %d believes a card in his hand (%r at %d) is impossible" % (player.number, card, index))
+                        sys.exit("Error: %r believes a card in his hand (%r at %d) is impossible" % (player, card, index))
 
     color_scores = [len(card_list) for card_list in game.table.values()]
     final_score = sum(color_scores)
@@ -511,5 +525,5 @@ print "*****"
 print "Best Score: %i" % best_score
 print "Worst Score: %i" % worst_score
 print "Average Score: %f" % average_score
-print "Avereage number of reserved cards discarded: %f" % (discarded_reserves / NUMBER_OF_GAMES)
+print "Average number of reserved cards discarded: %f" % (discarded_reserves / NUMBER_OF_GAMES)
 print "Average number of fuses burned: %f" % (burned_fuses / NUMBER_OF_GAMES)
