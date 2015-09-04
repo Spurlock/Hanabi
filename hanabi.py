@@ -20,8 +20,23 @@ NAMES = {
 final_scores = []
 discarded_reserves = 0
 burned_fuses = 0
-in_game_prints = False
+game_print_level = 4
 #TODO: in game prints for all actions and thoughts gauged by number for level of importance
+
+#game_print_level 0: Best score, worst score, and averages out of # of games played
+#game_print_level 1: Final table, score, and game # of each game
+#game_print_level 2: Each burned fuses and discarded reserve
+#game_print_level 3: Player turn, action (play, discard, clue), game table, hand, clues, fuses, and deck remaining
+#game_print_level 4: Player knowledge and hand age each turn
+#game_print_level 5: TODO: Inferences
+#game_print_level 6: TODO: Reasoning (thoughts leading to actions, knowledge, and inferences)
+
+def print_at_level(priority_level, message):
+    if priority_level <= game_print_level:
+        if type(message) == str:
+            print message
+        else:
+            pprint(message)
 
 # Current 50 Game Scores:
 # Best: 23
@@ -51,8 +66,7 @@ class Game:
             for i in xrange(0, HAND_SIZE):
                 player.hand[i] = self.deck.pop()
                 player.hand_age[i] = i
-            if in_game_prints is True:
-                print "%r's hand: %r" % (player, player.hand)
+            print_at_level(3, "%r's hand: %r" % (player, player.hand))
 
     def build_deck(self):
         deck = []
@@ -285,12 +299,11 @@ class Player:
 
         played = self.lose_card(index)
 
-        if in_game_prints is True:
-            print "%r plays a %r" % (current_player, played)
-            if self.hand[index] is not None:
-                print "%r draws a %r" % (current_player, self.hand[index])
-            else:
-                print "The deck is empty"
+        print_at_level(3, "%r plays a %r" % (current_player, played))
+        if self.hand[index] is not None:
+            print_at_level(3, "%r draws a %r" % (current_player, self.hand[index]))
+        else:
+            print_at_level(3, "The deck is empty")
 
         if played in game.get_playable_cards():
             game.table[played.color].append(played)
@@ -307,7 +320,7 @@ class Player:
         else:
             game.graveyard.append(played)
             game.remaining_fuses -= 1
-            #print "FUSE BURNED!!!!!!!!!!!!!"
+            print_at_level(2, "Burned a fuse!!!")
             global burned_fuses
             burned_fuses += 1
 
@@ -315,16 +328,15 @@ class Player:
         game.mark_turn_taken()
         discarded = self.lose_card(index)
 
-        if in_game_prints is True:
-            print "%r discards a %r" % (current_player, discarded)
-            if discarded in game.get_reserved_cards():
-                print "Discarded an irreplacable card!!!"
-                global discarded_reserves
-                discarded_reserves += 1
+        print_at_level(3, "%r discards a %r" % (current_player, discarded))
+        if discarded in game.get_reserved_cards():
+            print_at_level(2, "Discarded an irreplacable card!!!")
+            global discarded_reserves
+            discarded_reserves += 1
             if self.hand[index] is not None:
-                print "%r draws a %r" % (current_player, self.hand[index])
+                print_at_level(3, "%r draws a %r" % (current_player, self.hand[index]))
             else:
-                print "The deck is empty"
+                print_at_level(3, "The deck is empty")
 
         game.remaining_clues = min(game.remaining_clues + 1, MAX_CLUES)
         game.graveyard.append(discarded)
@@ -336,8 +348,7 @@ class Player:
 
         receiving_player.receive_clue(clue)
 
-        if in_game_prints is True:
-            print "%r gives %r a clue about %ss" % (current_player, receiving_player, clue)
+        print_at_level(3, "%r gives %r a clue about %ss" % (current_player, receiving_player, clue))
 
     def receive_clue(self, clue):
         game.remaining_clues -= 1
@@ -455,9 +466,9 @@ random.seed(0)
 for game_number in xrange(0, NUMBER_OF_GAMES):
     #TODO: study worst game (number 31) for strategy ideas
     #if game_number == 31:
-        #in_game_prints = True
+        #game_print_level = 9
     #else:
-        #in_game_prints = False
+        #game_print_level = 0
 
     # Start a game
     game = Game()
@@ -469,27 +480,31 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
     # Take turns loop
     while not game.game_over:
 
-        if in_game_prints is True:
-            print "*****"
-            print "Starting turn %d of game %d" % (turn, game_number)
+        print_at_level(3, "*****")
+        print_at_level(3, "Starting turn %d of game %d" % (turn, game_number))
 
         game.turn_taken = False
         current_player = game.players[game.whose_turn]
 
-        if in_game_prints is True:
-            print "%r's turn" % current_player
+        print_at_level(3, "%r's turn" % current_player)
             
         current_player.take_turn()
         if not game.turn_taken:
             sys.exit("Player failed to take an action!")
 
-        if in_game_prints is True:
-            print "Game Table:"
-            pprint(game.table)
-            for player in game.players:
-                print "%r's hand: %s" % (player, player.hand)
-                print "%r knows: %s" % (player, player.knowledge)
-            print "Clues remaining: %d" % game.remaining_clues
+        print_at_level(3, "Game Table:")
+        print_at_level(2, game.table)
+        for player in game.players:
+            print_at_level(3, "%r's hand: %s" % (player, player.hand))
+            print_at_level(4, "%r knows: %s" % (player, player.knowledge))
+            print_at_level(4, "%r's hand age: %s" % (player, player.hand_age))
+        print_at_level(3, "Clues remaining: %d" % game.remaining_clues)
+        print_at_level(3, "Fuses remaining: %d" % game.remaining_fuses)
+        #def deck_remaining:
+           # x=
+          #  for cards in game.deck:
+          #      placeholder text
+        print_at_level(3, "Deck remaining: %r" % len(game.deck))
 
         #if game isn't over, prepare for next turn
         if game.remaining_fuses > 0 and game.last_turn < NUM_PLAYERS:
@@ -509,10 +524,11 @@ for game_number in xrange(0, NUMBER_OF_GAMES):
 
     color_scores = [len(card_list) for card_list in game.table.values()]
     final_score = sum(color_scores)
-    print "Game %i's Final Table:" % game_number
-    pprint(game.table)
-    print "Game Score: %d" % final_score
-    print ""
+    print_at_level(1, "*****")
+    print_at_level(1, "Game %i's Final Table:" % game_number)
+    print_at_level(1, game.table)
+    print_at_level(1, "Game Score: %d" % final_score)
+    print_at_level(1, "")
 
     final_scores.append(final_score)
 
